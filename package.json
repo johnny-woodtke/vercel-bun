@@ -1,7 +1,23 @@
 {
   "name": "vercel-bun",
-  "module": "index.ts",
+  "version": "0.0.1",
+  "description": "Vercel Bun Runtime",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "author": "Johnny Woodtke",
+  "license": "MIT",
+  "homepage": "https://github.com/johnny-woodtke/vercel-bun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johnny-woodtke/vercel-bun.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc"
+  },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"
