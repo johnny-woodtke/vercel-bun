@@ -2,14 +2,12 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "vercel-bun",
-      "dependencies": {
-        "@vercel/build-utils": "^10.5.1",
-      },
+      "name": "@godsreveal/vercel-bun",
       "devDependencies": {
         "@types/bun": "latest",
       },
       "peerDependencies": {
+        "@vercel/build-utils": "^10.5.1",
         "typescript": "^5",
       },
     },
