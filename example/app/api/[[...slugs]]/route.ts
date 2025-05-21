@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { serve } from "bun";
 
 const app = new Elysia({ prefix: "/api" })
   .get("/", () => "Hello World")
