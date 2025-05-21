@@ -4,7 +4,7 @@ import {
   type PrepareCache,
 } from "@vercel/build-utils";
 
-export const prepareCache: PrepareCache = function ({
+export const prepareCache: PrepareCache | undefined = function ({
   repoRootPath,
   workPath,
 }) {

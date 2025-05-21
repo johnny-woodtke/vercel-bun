@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "https://github.com/johnny-woodtke/vercel-bun.git"
+    }
+  }
+}
