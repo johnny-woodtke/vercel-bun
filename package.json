@@ -1,5 +1,6 @@
 {
-  "name": "vercel-bun",
+  "private": false,
+  "name": "@godsreveal/vercel-bun",
   "version": "0.0.1",
   "description": "Vercel Bun Runtime",
   "main": "dist/index.js",
@@ -10,15 +11,19 @@
   "homepage": "https://github.com/johnny-woodtke/vercel-bun",
   "repository": {
     "type": "git",
-    "url": "https://github.com/johnny-woodtke/vercel-bun.git"
+    "url": "git+https://github.com/johnny-woodtke/vercel-bun.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "publish": "npm publish",
+    "publish:dry": "npm publish --dry-run"
   },
-  "private": true,
   "devDependencies": {
     "@types/bun": "latest"
   },
