@@ -1,12 +1,8 @@
-import {
-  defaultCachePathGlob,
-  glob,
-  type PrepareCache,
-} from "@vercel/build-utils";
+import { glob, type PrepareCache } from "@vercel/build-utils";
 
-export const prepareCache: PrepareCache | undefined = function ({
-  repoRootPath,
-  workPath,
-}) {
-  return glob(defaultCachePathGlob, repoRootPath || workPath);
+export const prepareCache: PrepareCache = async function ({ workPath }) {
+  return {
+    ...(await glob("node_modules/**", workPath)),
+    ...(await glob("bun.lock", workPath)),
+  };
 };
