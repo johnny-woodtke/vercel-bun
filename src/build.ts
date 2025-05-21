@@ -4,7 +4,7 @@ import { join } from "path";
 
 export const build: BuildV3 = async function ({ files, entrypoint, workPath }) {
   // Define the path to the output directory
-  const outDir = join(workPath, ".vercel_output");
+  const outDir = join(workPath, ".vercel/output");
 
   // Ensure the output directory exists
   await mkdir(outDir, { recursive: true });
