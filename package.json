@@ -28,9 +28,7 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
+    "typescript": "^5",
     "@vercel/build-utils": "^10.5.1"
   }
 }
