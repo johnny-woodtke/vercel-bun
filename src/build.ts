@@ -73,13 +73,17 @@ export const build: BuildV3 = async function ({
   const cwd = bun.name.split("/")[0];
   archive = cwd ? archive.folder(cwd) ?? archive : archive;
 
+  // Get the directory where this file is located
+  const currentDir = dirname(__filename);
+  console.log(`Current directory: ${currentDir}`);
+
   // Extract the binary to the workPath
-  const bunBinaryPath = join(workPath, "bin");
+  const bunBinaryPath = resolve(currentDir, "bin");
   await mkdir(bunBinaryPath, { recursive: true });
 
   // Generate the archive and save the Bun binary
   const bunExecutable = await bun.async("nodebuffer");
-  const bunOutputPath = join(bunBinaryPath, "bun");
+  const bunOutputPath = resolve(bunBinaryPath, "bun");
   await writeFile(bunOutputPath, bunExecutable, { mode: 0o755 });
 
   console.log(`Extracted Bun binary to: ${bunOutputPath}`);
@@ -88,10 +92,6 @@ export const build: BuildV3 = async function ({
   const userFiles: Files = await download(files, workPath, meta);
 
   console.log("Downloading Bun runtime files");
-
-  // Get the directory where this file is located
-  const currentDir = dirname(__filename);
-  console.log(`Current directory: ${currentDir}`);
 
   // Download runtime files containing Bun modules
   const runtimeFiles: Files = {
