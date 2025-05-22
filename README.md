@@ -1,23 +1,57 @@
-# vercel-bun
+# Vercel Bun Runtime
 
-Bun runtime on Vercel
+A custom runtime for running [Bun](https://bun.sh) applications on Vercel serverless functions.
 
-## Resources
+## Installation
 
-### Official
+```bash
+npm install @godsreveal/vercel-bun
+```
 
-- [Runtimes Docs](https://vercel.com/docs/functions/runtimes)
+## Usage
 
-- [Developing a Runtime Docs](https://github.com/vercel/vercel/blob/main/DEVELOPING_A_RUNTIME.md)
+Create a `vercel.json` file in your project root:
 
-- [Node.js Runtime Repo](https://github.com/vercel/vercel/tree/main/packages/node)
+```json
+{
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@godsreveal/vercel-bun@0.0.11"
+    }
+  }
+}
+```
 
-- [Lambda Bun Runtime Repo](https://github.com/oven-sh/bun/tree/main/packages/bun-lambda)
+## Supported Features
 
-### Community
+- Run Bun serverless functions on Vercel
+- Support for API routes with Elysia or other Bun-compatible frameworks
+- Automatic handling of HTTP requests
 
-- [Vercel Bun Runtime Repo](https://github.com/vercel-community/bun)
+## Example
 
-- [Vercel Bash Runtime Repo](https://github.com/vercel-community/bash)
+Create an API route in your project:
 
-- [Vercel Deno Runtime Repo](https://github.com/vercel-community/deno)
+```typescript
+// api/hello.ts
+import { Elysia, t } from "elysia";
+
+const app = new Elysia({ prefix: "/api" }).get(
+  "/hello",
+  () => `Hello from bun@${Bun.version}`,
+  {
+    response: t.String(),
+  }
+);
+
+export const GET = app.handle;
+export const POST = app.handle;
+```
+
+## Troubleshooting
+
+If you encounter the error `RequestId: xxxxxx Error: Couldn't find valid bootstrap(s): [/var/task/bootstrap /opt/bootstrap]`, make sure you're using the latest version of the runtime.
+
+## License
+
+MIT

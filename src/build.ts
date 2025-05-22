@@ -1,6 +1,6 @@
 import {
   download,
-  getNodeVersion,
+  FileFsRef,
   getProvidedRuntime,
   Lambda,
   type BuildV3,
@@ -33,6 +33,14 @@ export const build: BuildV3 = async function ({
   // Download runtime files containing Bun modules
   const runtimeFiles: Files = {
     // Append Bun files
+    bootstrap: new FileFsRef({
+      mode: 0o755, // Make it executable
+      fsPath: join(__dirname, "bootstrap"),
+    }),
+    "runtime.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: join(__dirname, "runtime.ts"),
+    }),
   };
 
   // Get provided runtime
