@@ -1,126 +1,206 @@
-// Bun runtime handler for Vercel serverless functions
-import { join } from "path";
-
-// The handler that will be executed by Bun
-async function main() {
-  try {
-    // Get handler and request from AWS Lambda environment
-    const { AWS_LAMBDA_FUNCTION_NAME, LAMBDA_TASK_ROOT, _HANDLER } =
-      process.env;
-
-    // Log startup info
-    console.log(`Starting Bun runtime for ${AWS_LAMBDA_FUNCTION_NAME}`);
-    console.log(`Bun version: ${Bun.version}`);
-    console.log(`Handler: ${_HANDLER}`);
-
-    // Import user handler
-    if (!_HANDLER) {
-      throw new Error("No handler specified");
-    }
-
-    // Import the specified handler file
-    const handlerPath = join(LAMBDA_TASK_ROOT || "", _HANDLER);
-    console.log(`Loading handler from ${handlerPath}`);
-
-    // Use dynamic import to load the handler
-    const userModule = await import(handlerPath);
-
-    // Start the AWS Lambda runtime
-    startLambdaRuntime(userModule);
-  } catch (error) {
-    console.error("Error starting Bun runtime:", error);
-    process.exit(1);
-  }
+interface VercelRequestPayload {
+  method: string;
+  path: string;
+  headers: Record<string, string>;
+  body: string;
 }
 
-// Function to start the Lambda runtime and process requests
-async function startLambdaRuntime(userModule: any) {
-  const { AWS_LAMBDA_RUNTIME_API } = process.env;
+type VercelResponseHeaders = Record<string, string | string[]>;
 
-  if (!AWS_LAMBDA_RUNTIME_API) {
-    throw new Error("AWS_LAMBDA_RUNTIME_API environment variable is not set");
+interface VercelResponsePayload {
+  statusCode: number;
+  headers: VercelResponseHeaders;
+  encoding: "base64";
+  body: string;
+}
+
+const RUNTIME_PATH = "2018-06-01/runtime";
+
+const base64 = {
+  encode: (buffer: ArrayBuffer): string => {
+    return Buffer.from(buffer).toString("base64");
+  },
+  decode: (str: string): Uint8Array => {
+    return Buffer.from(str, "base64");
+  },
+};
+
+const { _HANDLER, ENTRYPOINT, AWS_LAMBDA_RUNTIME_API } = process.env;
+
+process.env.SHLVL = undefined;
+
+function fromVercelRequest(payload: VercelRequestPayload): Request {
+  const headers = new Headers(payload.headers);
+  const base = `${headers.get("x-forwarded-proto")}://${headers.get(
+    "x-forwarded-host"
+  )}`;
+  const url = new URL(payload.path, base);
+  const body = payload.body ? base64.decode(payload.body) : undefined;
+  return new Request(url.href, {
+    method: payload.method,
+    headers,
+    body,
+  });
+}
+
+function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
+  const h: VercelResponseHeaders = {};
+  for (const [name, value] of headers) {
+    const cur = h[name];
+    if (typeof cur === "string") {
+      h[name] = [cur, value];
+    } else if (Array.isArray(cur)) {
+      cur.push(value);
+    } else {
+      h[name] = value;
+    }
+  }
+  return h;
+}
+
+async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
+  let body = "";
+  const bodyBuffer = await res.arrayBuffer();
+  if (bodyBuffer.byteLength > 0) {
+    body = base64.encode(bodyBuffer);
   }
 
-  const runtimeApiEndpoint = `http://${AWS_LAMBDA_RUNTIME_API}`;
+  return {
+    statusCode: res.status,
+    headers: headersToVercelHeaders(res.headers),
+    encoding: "base64",
+    body,
+  };
+}
 
-  // Process Lambda invocations in a loop
+async function processEvents(): Promise<void> {
+  let handler;
+
   while (true) {
+    const { event, awsRequestId } = await nextInvocation();
+    let result: VercelResponsePayload;
     try {
-      // Get next invocation
-      const invocationResponse = await fetch(
-        `${runtimeApiEndpoint}/2018-06-01/runtime/invocation/next`
-      );
+      if (!handler) {
+        const mod = await import(`./${_HANDLER}`);
+        handler = mod.default;
+        if (typeof handler !== "function") {
+          throw new Error("Failed to load handler function");
+        }
+      }
 
-      const requestId = invocationResponse.headers.get(
-        "Lambda-Runtime-Aws-Request-Id"
-      );
-      const context = {
-        requestId,
-        deadline: invocationResponse.headers.get("Lambda-Runtime-Deadline-Ms"),
-        invokedFunctionArn: invocationResponse.headers.get(
-          "Lambda-Runtime-Invoked-Function-Arn"
-        ),
-        traceId: process.env._X_AMZN_TRACE_ID,
+      const payload = JSON.parse(event.body) as VercelRequestPayload;
+      const req = fromVercelRequest(payload);
+
+      const connInfo = {
+        localAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
+        remoteAddr: {
+          hostname: "127.0.0.1",
+          port: 0,
+          transport: "tcp",
+        },
       };
 
-      console.log(`Processing request ${requestId}`);
-
-      // Get the event data
-      const event = await invocationResponse.json();
-
-      // Call the user handler
-      let result;
-      try {
-        // Determine whether we have a GET, POST, etc. handler
-        const { method } = event as { method: string };
-        if (method && userModule[method]) {
-          result = await userModule[method](event, context);
-        } else {
-          // Try to use handle, handler or default export
-          const handler =
-            userModule.handle || userModule.handler || userModule.default;
-          if (typeof handler === "function") {
-            result = await handler(event, context);
-          } else {
-            throw new Error("No valid handler function found in the module");
-          }
-        }
-
-        // Send the successful response
-        await fetch(
-          `${runtimeApiEndpoint}/2018-06-01/runtime/invocation/${requestId}/response`,
-          {
-            method: "POST",
-            body: JSON.stringify(result),
-          }
-        );
-      } catch (handlerError) {
-        console.error("Handler error:", handlerError);
-
-        // Send the error response
-        await fetch(
-          `${runtimeApiEndpoint}/2018-06-01/runtime/invocation/${requestId}/error`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              errorMessage: (handlerError as Error).message,
-              errorType: (handlerError as Error).name,
-              stackTrace: (handlerError as Error).stack?.split("\n"),
-            }),
-          }
-        );
-      }
-    } catch (runtimeError) {
-      console.error("Runtime error:", runtimeError);
-
-      // Wait a bit before retrying to avoid hot looping
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Run user code
+      const res = await handler(req, connInfo);
+      result = await toVercelResponse(res);
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      console.error(err);
+      await invokeError(err, awsRequestId);
+      continue;
     }
+    await invokeResponse(result, awsRequestId);
   }
 }
 
-// Start the runtime
-main().catch((error) => {
-  console.error("Fatal runtime error:", error);
-  process.exit(1);
-});
+async function nextInvocation() {
+  const res = await request("invocation/next");
+
+  if (res.status !== 200) {
+    throw new Error(
+      `Unexpected "/invocation/next" response: ${JSON.stringify(res)}`
+    );
+  }
+
+  const traceId = res.headers.get("lambda-runtime-trace-id");
+  if (typeof traceId === "string") {
+    process.env._X_AMZN_TRACE_ID = traceId;
+  } else {
+    process.env._X_AMZN_TRACE_ID = undefined;
+  }
+
+  const awsRequestId = res.headers.get("lambda-runtime-aws-request-id");
+  if (typeof awsRequestId !== "string") {
+    throw new Error('Did not receive "lambda-runtime-aws-request-id" header');
+  }
+
+  const event = JSON.parse(res.body);
+  return { event, awsRequestId };
+}
+
+async function invokeResponse(
+  result: VercelResponsePayload,
+  awsRequestId: string
+) {
+  const res = await request(`invocation/${awsRequestId}/response`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(result),
+  });
+  if (res.status !== 202) {
+    throw new Error(
+      `Unexpected "/invocation/response" response: ${JSON.stringify(res)}`
+    );
+  }
+}
+
+function invokeError(err: Error, awsRequestId: string) {
+  return postError(`invocation/${awsRequestId}/error`, err);
+}
+
+async function postError(path: string, err: Error): Promise<void> {
+  const lambdaErr = toLambdaErr(err);
+  const res = await request(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lambda-Runtime-Function-Error-Type": "Unhandled",
+    },
+    body: JSON.stringify(lambdaErr),
+  });
+  if (res.status !== 202) {
+    throw new Error(`Unexpected "${path}" response: ${JSON.stringify(res)}`);
+  }
+}
+
+async function request(path: string, options?: RequestInit) {
+  const url = `http://${AWS_LAMBDA_RUNTIME_API}/${RUNTIME_PATH}/${path}`;
+  const res = await fetch(url, options);
+  const body = await res.text();
+  return {
+    status: res.status,
+    headers: res.headers,
+    body,
+  };
+}
+
+function toLambdaErr({ name, message, stack }: Error) {
+  return {
+    errorType: name,
+    errorMessage: message,
+    stackTrace: (stack || "").split("\n").slice(1),
+  };
+}
+
+if (_HANDLER) {
+  // Runtime - execute the runtime loop
+  processEvents().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+} else if (ENTRYPOINT) {
+  // Build - import the entrypoint so that it gets cached
+  import(ENTRYPOINT);
+}
