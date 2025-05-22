@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Vercel Bun Runtime",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

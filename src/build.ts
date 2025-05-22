@@ -1,6 +1,7 @@
 import {
   download,
   getNodeVersion,
+  getProvidedRuntime,
   Lambda,
   type BuildV3,
   type Files,
@@ -8,9 +9,12 @@ import {
 
 export const build: BuildV3 = async function ({
   files,
+  config,
   entrypoint,
   workPath,
+  repoRootPath,
   meta,
+  ...rest
 }) {
   // Check if dev mode is used
   if (meta?.isDev) {
@@ -33,7 +37,29 @@ export const build: BuildV3 = async function ({
   // Get node version
   const nodeVersion = await getNodeVersion(workPath);
 
-  console.log(`Creating Lambda with runtime ${nodeVersion.runtime}`);
+  console.log(`Using Node runtime: ${nodeVersion.runtime}`);
+
+  // Get provided version
+  const providedVersion = await getProvidedRuntime();
+
+  console.log(`Using provided runtime: ${providedVersion}`);
+
+  // Log config and other inputs
+  console.log(
+    "Config and other inputs",
+    JSON.stringify(
+      {
+        config,
+        entrypoint,
+        workPath,
+        repoRootPath,
+      },
+      null,
+      2
+    )
+  );
+
+  console.log("Creating Lambda");
 
   // Create Lambda
   const lambda = new Lambda({
