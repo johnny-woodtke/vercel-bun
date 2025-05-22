@@ -113,11 +113,11 @@ export const build: BuildV3 = async function ({
       ...userFiles,
       ...runtimeFiles,
     },
-    handler: config.projectSettings?.rootDirectory
-      ? join(config.projectSettings.rootDirectory, entrypoint)
-      : entrypoint,
+    handler: entrypoint,
     runtime: await getProvidedRuntime(),
   });
+
+  console.log(`Handler path set to: ${lambda.handler}`);
 
   // Return the Lambda function
   return {

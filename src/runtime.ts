@@ -203,10 +203,21 @@ async function processEvents(): Promise<void> {
 
       try {
         if (!handler) {
-          const mod = await import(`./${_HANDLER}`);
-          handler = mod.default;
-          if (typeof handler !== "function") {
-            throw new Error("Failed to load handler function");
+          try {
+            const mod = await import(`./${_HANDLER}`);
+            handler = mod.default;
+            if (typeof handler !== "function") {
+              throw new Error(
+                `Handler function not found in "${_HANDLER}". Make sure it exports a default function.`
+              );
+            }
+          } catch (importError: any) {
+            if (importError.code === "ERR_MODULE_NOT_FOUND") {
+              throw new Error(
+                `Cannot find handler file: "./${_HANDLER}". Make sure the file exists and is correctly referenced in your config.`
+              );
+            }
+            throw importError;
           }
         }
 
@@ -239,6 +250,9 @@ async function processEvents(): Promise<void> {
     }
   }
 }
+
+// Log bun version
+console.log(`Running with bun@${Bun.version}`);
 
 if (_HANDLER) {
   // Runtime - execute the runtime loop
