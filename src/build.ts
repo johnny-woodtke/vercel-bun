@@ -6,6 +6,7 @@ import {
   type BuildV3,
   type Files,
 } from "@vercel/build-utils";
+import { join } from "path";
 
 export const build: BuildV3 = async function ({
   files,
@@ -29,20 +30,15 @@ export const build: BuildV3 = async function ({
 
   console.log("Downloading Bun runtime files");
 
-  // Download runtime files containing Bun bins and libs
+  // Download runtime files containing Bun modules
   const runtimeFiles: Files = {
     // Append Bun files
   };
 
-  // Get node version
-  const nodeVersion = await getNodeVersion(workPath);
+  // Get provided runtime
+  const providedRuntime = await getProvidedRuntime();
 
-  console.log(`Using Node runtime: ${nodeVersion.runtime}`);
-
-  // Get provided version
-  const providedVersion = await getProvidedRuntime();
-
-  console.log(`Using provided runtime: ${providedVersion}`);
+  console.log(`Using provided runtime: ${providedRuntime}`);
 
   // Log config and other inputs
   console.log(
@@ -67,8 +63,10 @@ export const build: BuildV3 = async function ({
       ...userFiles,
       ...runtimeFiles,
     },
-    handler: entrypoint,
-    runtime: nodeVersion.runtime,
+    handler: config.projectSettings?.rootDirectory
+      ? join(config.projectSettings.rootDirectory, entrypoint)
+      : entrypoint,
+    runtime: providedRuntime,
   });
 
   // Return the Lambda function
