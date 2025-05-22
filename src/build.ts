@@ -6,7 +6,7 @@ import {
   type BuildV3,
   type Files,
 } from "@vercel/build-utils";
-import { join } from "path";
+import { dirname, join, resolve } from "path";
 
 export const build: BuildV3 = async function ({
   files,
@@ -30,18 +30,26 @@ export const build: BuildV3 = async function ({
 
   console.log("Downloading Bun runtime files");
 
+  // Get the directory where this file is located
+  const currentDir = dirname(__filename);
+  console.log(`Current directory: ${currentDir}`);
+
   // Download runtime files containing Bun modules
   const runtimeFiles: Files = {
     // Append Bun files
     bootstrap: new FileFsRef({
       mode: 0o755, // Make it executable
-      fsPath: join(__dirname, "bootstrap"),
+      fsPath: resolve(currentDir, "bootstrap"),
     }),
     "runtime.ts": new FileFsRef({
       mode: 0o644,
-      fsPath: join(__dirname, "runtime.ts"),
+      fsPath: resolve(currentDir, "runtime.ts"),
     }),
   };
+
+  // Log the paths of the runtime files
+  console.log(`Bootstrap path: ${resolve(currentDir, "bootstrap")}`);
+  console.log(`Runtime.ts path: ${resolve(currentDir, "runtime.ts")}`);
 
   // Get provided runtime
   const providedRuntime = await getProvidedRuntime();

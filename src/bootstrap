@@ -1,10 +1,37 @@
 #! /bin/sh
 export BUN_INSTALL_CACHE_DIR=/tmp/bun/cache
+
 # Ensure bootstrap file is in the expected location
 if [ ! -f /var/task/bootstrap ]; then
   echo "Bootstrap not in expected location, attempting to copy"
   cp "$0" /var/task/bootstrap
   chmod +x /var/task/bootstrap
 fi
-# Use Bun binary to execute the runtime
-exec /opt/bun --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts
+
+# Find Bun binary
+BUN_BINARY=""
+for path in "/var/runtime/bin/bun" "/var/lang/bin/bun" "/opt/bun" "$(which bun 2>/dev/null)"; do
+  if [ -x "$path" ]; then
+    BUN_BINARY="$path"
+    break
+  fi
+done
+
+# If Bun wasn't found, try to download it
+if [ -z "$BUN_BINARY" ]; then
+  echo "Bun binary not found, attempting to download"
+  mkdir -p /tmp/bun
+  curl -fsSL https://bun.sh/install | bash -s -- --install-path /tmp/bun
+  BUN_BINARY="/tmp/bun/bin/bun"
+fi
+
+# Verify Bun binary exists
+if [ ! -x "$BUN_BINARY" ]; then
+  echo "Error: Bun binary not found or not executable"
+  exit 1
+fi
+
+echo "Using Bun binary: $BUN_BINARY"
+
+# Execute Bun runtime
+exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts
