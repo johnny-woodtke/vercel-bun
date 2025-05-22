@@ -28,14 +28,13 @@ echo "Lambda Task Root: $LAMBDA_TASK_ROOT"
 echo "Handler: $_HANDLER"
 echo "AWS Lambda Runtime API: $AWS_LAMBDA_RUNTIME_API"
 
-# Debug: List files in task root to help diagnose missing handler issues
-echo "Files in Lambda Task Root:"
-ls -la $LAMBDA_TASK_ROOT
-
-# Check if handler file exists
-if [ -n "$_HANDLER" ] && [ ! -f "$LAMBDA_TASK_ROOT/$_HANDLER" ]; then
-  echo "Warning: Handler file '$_HANDLER' not found in task root. This might cause import errors."
-fi
+# Set up writable directories for Bun
+export BUN_TMPDIR="/tmp"
+export BUN_INSTALL_CACHE_DIR="/tmp/.bun"
+export BUN_INSTALL_GLOBAL_DIR="/tmp/.bun"
+export BUN_CONFIG_DIR="/tmp/.bun"
+export XDG_CACHE_HOME="/tmp/.cache"
+export HOME="/tmp"
 
 # Execute Bun runtime
 exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts
