@@ -23,11 +23,16 @@ export const build: BuildV3 = async function ({
     throw new Error("`vercel dev` is not supported right now");
   }
 
-  // Get the Bun binary URL
+  // Determine architecture - Vercel's AWS Lambda runs on x64 by default
+  console.log("Process", JSON.stringify(process, null, 2));
+  const arch = process.arch === "arm64" ? "aarch64" : "x64";
+
+  // Get the Bun binary URL for the right architecture
   const { href } = new URL(
-    "https://bun.sh/download/1.2.13/linux/aarch64?avx2=true"
+    `https://bun.sh/download/1.2.13/linux/${arch}?avx2=true`
   );
 
+  console.log(`Downloading bun binary for architecture: ${arch}`);
   console.log(`Downloading bun binary: ${href}`);
 
   // Download the Bun binary

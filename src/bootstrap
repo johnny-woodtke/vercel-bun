@@ -33,8 +33,5 @@ echo "Handler: $_HANDLER"
 echo "AWS Lambda Runtime API: $AWS_LAMBDA_RUNTIME_API"
 echo "Bun Version: $BUN_VERSION"
 
-# Make sure the binary is executable
-chmod +x "$BUN_BINARY"
-
 # Execute Bun runtime
 exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts
