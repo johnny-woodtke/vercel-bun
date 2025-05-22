@@ -197,7 +197,8 @@ function toLambdaErr({ name, message, stack }: Error) {
 if (_HANDLER) {
   // Runtime - execute the runtime loop
   processEvents().catch((err) => {
-    console.error(err);
+    console.error(JSON.stringify(err, null, 2));
+    console.error(err.message);
     process.exit(1);
   });
 } else if (ENTRYPOINT) {
