@@ -1,11 +1,10 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Vercel Bun Runtime",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "author": "Johnny Woodtke",
   "license": "MIT",
   "homepage": "https://github.com/johnny-woodtke/vercel-bun",
