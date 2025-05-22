@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "app/api/**/*.ts": {
-      "runtime": "vercel-php@0.7.3"
+      "runtime": "@godsreveal/vercel-bun@0.0.5"
     }
   }
 }
