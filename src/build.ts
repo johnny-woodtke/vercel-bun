@@ -19,11 +19,35 @@ export const build: BuildV3 = async function ({
 }) {
   // Check if dev mode is used
   if (meta?.isDev) {
-    console.log("`vercel dev` is not supported right now");
-    process.exit(255);
+    throw new Error("`vercel dev` is not supported right now");
   }
 
-  console.log("Downloading user files");
+  // Get the Bun binary URL
+  const { href } = new URL(
+    "https://bun.sh/download/1.2.13/linux/aarch64?avx2=true"
+  );
+
+  console.log(`Downloading bun binary: ${href}`);
+
+  // Download the Bun binary
+  const res = await fetch(href, {
+    headers: {
+      "User-Agent": "@godsreveal/vercel-bun",
+    },
+  });
+
+  // Notify if the Bun binary was downloaded from a different URL
+  if (res.url !== href) {
+    console.log(`Downloaded bun binary: ${res.url}`);
+  }
+
+  // Check if res is OK
+  if (!res.ok) {
+    const reason = await res.text();
+    throw new Error(`Failed to download bun binary: ${reason}`);
+  }
+
+  console.log("Extracting bun binary");
 
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
