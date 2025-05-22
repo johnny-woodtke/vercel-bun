@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "Vercel Bun Runtime",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,6 +26,7 @@
     "release:dry": "bun run release --dry-run"
   },
   "dependencies": {
+    "aws4fetch": "^1.0.17",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

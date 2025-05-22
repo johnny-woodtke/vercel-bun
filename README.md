@@ -1,64 +1,23 @@
-# Bun Runtime for Vercel
+# vercel-bun
 
-This package provides Bun runtime support for Vercel serverless functions.
+Bun runtime for Vercel Serverless Functions
 
-## Usage
+## Resources
 
-To use Bun for your Vercel functions, you need to specify this runtime in your `vercel.json` file:
+### Official
 
-```json
-{
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "@vercel/bun@1.0.0"
-    }
-  }
-}
-```
+- [Runtimes Docs](https://vercel.com/docs/functions/runtimes)
 
-## Features
+- [Developing a Runtime Docs](https://github.com/vercel/vercel/blob/main/DEVELOPING_A_RUNTIME.md)
 
-- Supports Bun 1.2.13 on Linux/aarch64 architecture
-- Handles TypeScript and JavaScript files automatically
-- Compatible with AWS Lambda provided.al2 runtime
-- Optimized caching for faster redeployments
-- Large environment variable support via Lambda runtime wrappers
+- [Node.js Runtime Repo](https://github.com/vercel/vercel/tree/main/packages/node)
 
-## Limitations
+- [Lambda Bun Runtime Repo](https://github.com/oven-sh/bun/tree/main/packages/bun-lambda)
 
-- Currently `vercel dev` is not supported for local development
-- Only supports aarch64 architecture (ARM64)
-- Custom binary installations are not yet supported
+### Community
 
-## Example Function
+- [Vercel Bun Runtime Repo](https://github.com/vercel-community/bun)
 
-Create a file at `api/hello.ts`:
+- [Vercel Bash Runtime Repo](https://github.com/vercel-community/bash)
 
-```typescript
-export default function handler(request) {
-  return new Response(
-    JSON.stringify({
-      message: `Hello from Bun ${Bun.version}!`,
-      time: new Date().toISOString(),
-    }),
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
-}
-```
-
-## How It Works
-
-This runtime:
-
-1. Downloads the Bun binary during the build process
-2. Sets up the Lambda environment with the Bun runtime
-3. Creates a bootstrap script that starts the Bun runtime
-4. Implements the AWS Lambda Runtime API for handling requests
-
-## License
-
-MIT
+- [Vercel Deno Runtime Repo](https://github.com/vercel-community/deno)

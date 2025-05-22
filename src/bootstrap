@@ -1,5 +1,4 @@
 #! /bin/sh
-export BUN_INSTALL_CACHE_DIR=/tmp/bun/cache
 
 # Ensure bootstrap file is in the expected location
 if [ ! -f /var/task/bootstrap ]; then
@@ -23,15 +22,11 @@ if [ ! -x "$BUN_BINARY" ]; then
   exit 1
 fi
 
-echo "Using Bun binary: $BUN_BINARY"
-
 # Log environment information
-echo "Environment variables:"
-env
+echo "Using Bun binary: $BUN_BINARY"
 echo "Lambda Task Root: $LAMBDA_TASK_ROOT"
 echo "Handler: $_HANDLER"
 echo "AWS Lambda Runtime API: $AWS_LAMBDA_RUNTIME_API"
-echo "Bun Version: $BUN_VERSION"
 
 # Execute Bun runtime
 exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts

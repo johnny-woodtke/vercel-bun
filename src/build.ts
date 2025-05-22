@@ -10,6 +10,11 @@ import { mkdir, writeFile } from "fs/promises";
 import JSZip from "jszip";
 import { dirname, join, resolve } from "path";
 
+const buildConfig = {
+  defaultBunVersion: "1.2.13",
+  defaultArch: "x64",
+} as const;
+
 export const build: BuildV3 = async function ({
   files,
   config,
@@ -18,22 +23,14 @@ export const build: BuildV3 = async function ({
   repoRootPath,
   meta,
 }) {
-  // Check if dev mode is used
-  if (meta?.isDev) {
-    throw new Error("`vercel dev` is not supported right now");
-  }
-  console.log(`Process env: ${JSON.stringify(process.env, null, 2)}`);
-
   // Determine architecture - Vercel's AWS Lambda runs on x64 by default
   console.log(`Process arch: ${process.arch}`);
-  const arch = process.arch === "arm64" ? "aarch64" : "x64";
+  const arch = process.arch === "arm64" ? "aarch64" : buildConfig.defaultArch;
 
   // Get the Bun binary URL for the right architecture
   const { href } = new URL(
-    `https://bun.sh/download/1.2.13/linux/${arch}?avx2=true`
+    `https://bun.sh/download/${buildConfig.defaultBunVersion}/linux/${arch}?avx2=true`
   );
-
-  console.log(`Downloading bun binary for architecture: ${arch}`);
   console.log(`Downloading bun binary: ${href}`);
 
   // Download the Bun binary
@@ -54,17 +51,11 @@ export const build: BuildV3 = async function ({
     throw new Error(`Failed to download bun binary: ${reason}`);
   }
 
-  console.log("Extracting bun binary");
-
   // Load the archive
-  let archive: JSZip;
-  try {
-    archive = await JSZip.loadAsync(await res.arrayBuffer());
-  } catch (error) {
-    console.log(`Failed to load bun binary: ${(error as Error).message}`);
-    throw error;
-  }
-
+  let archive = await JSZip.loadAsync(await res.arrayBuffer()).catch((e) => {
+    console.log(`Failed to load bun binary: ${(e as Error).message}`);
+    throw e;
+  });
   console.log(`Extracted archive: ${Object.keys(archive.files)}`);
 
   // Get bun from archive
@@ -92,13 +83,6 @@ export const build: BuildV3 = async function ({
   const bunOutputPath = resolve(bunBinaryPath, "bun");
   await writeFile(bunOutputPath, bunExecutable, { mode: 0o755 });
 
-  console.log(`Extracted Bun binary to: ${bunOutputPath}`);
-
-  // Download the user files
-  const userFiles: Files = await download(files, workPath, meta);
-
-  console.log("Downloading Bun runtime files");
-
   // Download runtime files containing Bun modules
   const runtimeFiles: Files = {
     // Append Bun files
@@ -115,33 +99,13 @@ export const build: BuildV3 = async function ({
       fsPath: bunOutputPath,
     }),
   };
+  console.log("Runtime files");
+  console.log(JSON.stringify(runtimeFiles, null, 2));
 
-  // Log the paths of the runtime files
-  console.log(`Bootstrap path: ${resolve(currentDir, "bootstrap")}`);
-  console.log(`Runtime.ts path: ${resolve(currentDir, "runtime.ts")}`);
-  console.log(`Bun binary path: ${bunOutputPath}`);
-
-  // Get provided runtime
-  const providedRuntime = await getProvidedRuntime();
-
-  console.log(`Using provided runtime: ${providedRuntime}`);
-
-  // Log config and other inputs
-  console.log(
-    "Config and other inputs",
-    JSON.stringify(
-      {
-        config,
-        entrypoint,
-        workPath,
-        repoRootPath,
-      },
-      null,
-      2
-    )
-  );
-
-  console.log("Creating Lambda");
+  // Download the user files
+  const userFiles: Files = await download(files, workPath, meta);
+  console.log("User files");
+  console.log(JSON.stringify(userFiles, null, 2));
 
   // Create Lambda
   const lambda = new Lambda({
@@ -152,11 +116,7 @@ export const build: BuildV3 = async function ({
     handler: config.projectSettings?.rootDirectory
       ? join(config.projectSettings.rootDirectory, entrypoint)
       : entrypoint,
-    runtime: providedRuntime,
-    environment: {
-      BUN_VERSION: "1.2.13",
-    },
-    supportsWrapper: true, // Enable support for large environment variables
+    runtime: await getProvidedRuntime(),
   });
 
   // Return the Lambda function

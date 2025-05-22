@@ -1,207 +1,173 @@
-interface VercelRequestPayload {
-  method: string;
-  path: string;
-  headers: Record<string, string>;
-  body: string;
+#!/usr/bin/env bun
+// Runtime for AWS Lambda using Bun
+
+import { file, write } from "bun";
+import { join } from "path";
+import { tmpdir } from "os";
+import { mkdtemp } from "fs/promises";
+import { Readable } from "stream";
+
+// Global state for current request
+let statusCode = 200;
+let headers = { "content-type": "text/plain; charset=utf8" };
+
+interface Event {
+  body?: string;
+  encoding?: string;
+  [key: string]: any;
 }
 
-type VercelResponseHeaders = Record<string, string | string[]>;
-
-interface VercelResponsePayload {
-  statusCode: number;
-  headers: VercelResponseHeaders;
-  encoding: "base64";
-  body: string;
+async function runtimeApi(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const url = `http://${process.env.AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/${endpoint}`;
+  return await fetch(url, options);
 }
 
-const RUNTIME_PATH = "2018-06-01/runtime";
+async function runtimeInit() {
+  // Initialize user code by importing handler
+  try {
+    await import(process.env._HANDLER || "");
+  } catch (error) {
+    const errorMessage = `Initialization failed for '${
+      process.env._HANDLER
+    }' (exit code ${error instanceof Error ? error.message : String(error)})`;
+    console.error(errorMessage);
 
-const base64 = {
-  encode: (buffer: ArrayBuffer): string => {
-    return Buffer.from(buffer).toString("base64");
-  },
-  decode: (str: string): Uint8Array => {
-    return Buffer.from(str, "base64");
-  },
+    await runtimeApi("init/error", {
+      method: "POST",
+      body: JSON.stringify({ errorMessage }),
+    });
+
+    process.exit(1);
+  }
+
+  // Process events
+  while (true) {
+    await runtimeNext();
+  }
+}
+
+async function runtimeNext() {
+  // Reset response state
+  statusCode = 200;
+  headers = { "content-type": "text/plain; charset=utf8" };
+
+  // Get next event
+  const invocationResponse = await runtimeApi("invocation/next");
+  const event = (await invocationResponse.json()) as Event;
+  const requestId = invocationResponse.headers.get(
+    "lambda-runtime-aws-request-id"
+  );
+
+  if (!requestId) {
+    console.error("No request ID found in invocation response");
+    return;
+  }
+
+  // Create temp file for body output
+  const tempDir = await mkdtemp(join(tmpdir(), "lambda-"));
+  const bodyPath = join(tempDir, "body");
+
+  try {
+    // Prepare body input if needed
+    let bodyBuffer: Buffer | null = null;
+
+    if (event.body) {
+      let body = event.body;
+      if (event.encoding === "base64") {
+        body = atob(body);
+      }
+      bodyBuffer = Buffer.from(body);
+    }
+
+    // Execute handler function
+    const handlerModule = await import(process.env._HANDLER || "");
+    const handler = handlerModule.handler;
+
+    if (typeof handler !== "function") {
+      throw new Error(`Handler function not found in ${process.env._HANDLER}`);
+    }
+
+    // Execute the handler with the event and capture output
+    let responseBody = "";
+
+    // Create a readable stream from the body buffer if needed
+    const bodyStream = bodyBuffer ? Readable.from(bodyBuffer) : null;
+
+    // Call the handler and await its response
+    const result = await Promise.resolve(handler(event, bodyStream));
+
+    // Handle the result
+    if (result !== undefined && result !== null) {
+      responseBody = String(result);
+    }
+
+    // Write the response to file using Bun's optimized file API
+    await write(bodyPath, responseBody);
+
+    // Send the response
+    const base64Body = btoa(responseBody);
+
+    const response = {
+      statusCode,
+      headers,
+      encoding: "base64",
+      body: base64Body,
+    };
+
+    await runtimeApi(`invocation/${requestId}/response`, {
+      method: "POST",
+      body: JSON.stringify(response),
+    });
+  } catch (error) {
+    const errorMessage = `Invocation failed for 'handler' function in '${
+      process.env._HANDLER
+    }' (${error instanceof Error ? error.message : String(error)})`;
+    console.error(errorMessage);
+
+    await runtimeApi(`invocation/${requestId}/error`, {
+      method: "POST",
+      body: JSON.stringify({ errorMessage }),
+    });
+  }
+}
+
+// Helper functions for setting response parameters
+globalThis.http_response_code = function (code: number) {
+  statusCode = code;
 };
 
-const { _HANDLER, ENTRYPOINT, AWS_LAMBDA_RUNTIME_API } = process.env;
-
-process.env.SHLVL = undefined;
-
-function fromVercelRequest(payload: VercelRequestPayload): Request {
-  const headers = new Headers(payload.headers);
-  const base = `${headers.get("x-forwarded-proto")}://${headers.get(
-    "x-forwarded-host"
-  )}`;
-  const url = new URL(payload.path, base);
-  const body = payload.body ? base64.decode(payload.body) : undefined;
-  return new Request(url.href, {
-    method: payload.method,
-    headers,
-    body,
-  });
-}
-
-function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
-  const h: VercelResponseHeaders = {};
-  for (const [name, value] of headers) {
-    const cur = h[name];
-    if (typeof cur === "string") {
-      h[name] = [cur, value];
-    } else if (Array.isArray(cur)) {
-      cur.push(value);
-    } else {
-      h[name] = value;
-    }
-  }
-  return h;
-}
-
-async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
-  let body = "";
-  const bodyBuffer = await res.arrayBuffer();
-  if (bodyBuffer.byteLength > 0) {
-    body = base64.encode(bodyBuffer);
-  }
-
-  return {
-    statusCode: res.status,
-    headers: headersToVercelHeaders(res.headers),
-    encoding: "base64",
-    body,
+globalThis.http_response_header = function (name: string, value: string) {
+  headers = {
+    ...headers,
+    [name.toLowerCase()]: value,
   };
-}
+};
 
-async function processEvents(): Promise<void> {
-  let handler;
-
-  while (true) {
-    const { event, awsRequestId } = await nextInvocation();
-    let result: VercelResponsePayload;
-    try {
-      if (!handler) {
-        const mod = await import(`./${_HANDLER}`);
-        handler = mod.default;
-        if (typeof handler !== "function") {
-          throw new Error("Failed to load handler function");
-        }
-      }
-
-      const payload = JSON.parse(event.body) as VercelRequestPayload;
-      const req = fromVercelRequest(payload);
-
-      const connInfo = {
-        localAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
-        remoteAddr: {
-          hostname: "127.0.0.1",
-          port: 0,
-          transport: "tcp",
-        },
-      };
-
-      // Run user code
-      const res = await handler(req, connInfo);
-      result = await toVercelResponse(res);
-    } catch (e: unknown) {
-      const err = e instanceof Error ? e : new Error(String(e));
-      console.error(err);
-      await invokeError(err, awsRequestId);
-      continue;
-    }
-    await invokeResponse(result, awsRequestId);
-  }
-}
-
-async function nextInvocation() {
-  const res = await request("invocation/next");
-
-  if (res.status !== 200) {
-    throw new Error(
-      `Unexpected "/invocation/next" response: ${JSON.stringify(res)}`
-    );
-  }
-
-  const traceId = res.headers.get("lambda-runtime-trace-id");
-  if (typeof traceId === "string") {
-    process.env._X_AMZN_TRACE_ID = traceId;
-  } else {
-    process.env._X_AMZN_TRACE_ID = undefined;
-  }
-
-  const awsRequestId = res.headers.get("lambda-runtime-aws-request-id");
-  if (typeof awsRequestId !== "string") {
-    throw new Error('Did not receive "lambda-runtime-aws-request-id" header');
-  }
-
-  const event = JSON.parse(res.body);
-  return { event, awsRequestId };
-}
-
-async function invokeResponse(
-  result: VercelResponsePayload,
-  awsRequestId: string
+globalThis.http_response_redirect = function (
+  location: string,
+  code: number = 302
 ) {
-  const res = await request(`invocation/${awsRequestId}/response`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(result),
-  });
-  if (res.status !== 202) {
-    throw new Error(
-      `Unexpected "/invocation/response" response: ${JSON.stringify(res)}`
-    );
-  }
+  http_response_code(code);
+  http_response_header("location", location);
+};
+
+globalThis.http_response_json = function () {
+  http_response_header("content-type", "application/json; charset=utf8");
+};
+
+// Declare types for global functions
+declare global {
+  function http_response_code(code: number): void;
+  function http_response_header(name: string, value: string): void;
+  function http_response_redirect(location: string, code?: number): void;
+  function http_response_json(): void;
 }
 
-function invokeError(err: Error, awsRequestId: string) {
-  return postError(`invocation/${awsRequestId}/error`, err);
-}
-
-async function postError(path: string, err: Error): Promise<void> {
-  const lambdaErr = toLambdaErr(err);
-  const res = await request(path, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lambda-Runtime-Function-Error-Type": "Unhandled",
-    },
-    body: JSON.stringify(lambdaErr),
-  });
-  if (res.status !== 202) {
-    throw new Error(`Unexpected "${path}" response: ${JSON.stringify(res)}`);
-  }
-}
-
-async function request(path: string, options?: RequestInit) {
-  const url = `http://${AWS_LAMBDA_RUNTIME_API}/${RUNTIME_PATH}/${path}`;
-  const res = await fetch(url, options);
-  const body = await res.text();
-  return {
-    status: res.status,
-    headers: res.headers,
-    body,
-  };
-}
-
-function toLambdaErr({ name, message, stack }: Error) {
-  return {
-    errorType: name,
-    errorMessage: message,
-    stackTrace: (stack || "").split("\n").slice(1),
-  };
-}
-
-if (_HANDLER) {
-  // Runtime - execute the runtime loop
-  processEvents().catch((err) => {
-    console.error(JSON.stringify(err, null, 2));
-    console.error(err.message);
-    process.exit(1);
-  });
-} else if (ENTRYPOINT) {
-  // Build - import the entrypoint so that it gets cached
-  import(ENTRYPOINT);
-}
+// Start the runtime
+runtimeInit().catch((error) => {
+  console.error("Runtime initialization failed:", error);
+  process.exit(1);
+});
