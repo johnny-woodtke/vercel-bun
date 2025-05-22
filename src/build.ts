@@ -6,6 +6,7 @@ import {
   type BuildV3,
   type Files,
 } from "@vercel/build-utils";
+import JSZip from "jszip";
 import { dirname, join, resolve } from "path";
 
 export const build: BuildV3 = async function ({
@@ -48,6 +49,25 @@ export const build: BuildV3 = async function ({
   }
 
   console.log("Extracting bun binary");
+
+  // Unzip the Bun binary
+  let archive: JSZip;
+  try {
+    archive = await JSZip.loadAsync(await res.arrayBuffer());
+  } catch (error) {
+    console.log(`Failed to load bun binary: ${(error as Error).message}`);
+    throw error;
+  }
+
+  console.log(`Extracted archive: ${Object.keys(archive.files)}`);
+
+  // Get bun
+  const bun = archive.filter(
+    (_, { dir, name }) => !dir && name.endsWith("bun")
+  )[0];
+  if (!bun) {
+    throw new Error("Failed to find executable in zip");
+  }
 
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
