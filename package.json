@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Vercel Bun Runtime",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,8 +23,8 @@
     "build": "rm -rf dist && tsc",
     "build:vercel": "bunx vercel build",
     "pull:vercel": "bunx vercel pull",
-    "publish": "bun run build && npm publish",
-    "publish:dry": "npm publish --dry-run"
+    "release": "bun run --bun build && npm publish",
+    "release:dry": "bun run release --dry-run"
   },
   "devDependencies": {
     "@types/bun": "latest"
