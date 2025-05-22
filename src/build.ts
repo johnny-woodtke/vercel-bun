@@ -23,9 +23,6 @@ export const build: BuildV3 = async function ({
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
 
-  console.log("User files");
-  console.log(JSON.stringify(userFiles, null, 2));
-
   console.log("Downloading Bun runtime files");
 
   // Download runtime files containing Bun bins and libs
@@ -33,10 +30,10 @@ export const build: BuildV3 = async function ({
     // Append Bun files
   };
 
-  console.log("Creating Lambda");
-
   // Get node version
   const nodeVersion = await getNodeVersion(workPath);
+
+  console.log(`Creating Lambda with runtime ${nodeVersion.runtime}`);
 
   // Create Lambda
   const lambda = new Lambda({
