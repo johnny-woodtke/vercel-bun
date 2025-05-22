@@ -8,9 +8,9 @@ if [ ! -f /var/task/bootstrap ]; then
   chmod +x /var/task/bootstrap
 fi
 
-# Find Bun binary
+# Find Bun binary - check bundled version first
 BUN_BINARY=""
-for path in "/var/runtime/bin/bun" "/var/lang/bin/bun" "/opt/bun" "$(which bun 2>/dev/null)"; do
+for path in "/var/task/bin/bun" "/var/runtime/bin/bun" "/var/lang/bin/bun" "/opt/bun" "$(which bun 2>/dev/null)"; do
   if [ -x "$path" ]; then
     BUN_BINARY="$path"
     break
@@ -24,6 +24,15 @@ if [ ! -x "$BUN_BINARY" ]; then
 fi
 
 echo "Using Bun binary: $BUN_BINARY"
+
+# Log environment information
+echo "Lambda Task Root: $LAMBDA_TASK_ROOT"
+echo "Handler: $_HANDLER"
+echo "AWS Lambda Runtime API: $AWS_LAMBDA_RUNTIME_API"
+echo "Bun Version: $BUN_VERSION"
+
+# Make sure the binary is executable
+chmod +x "$BUN_BINARY"
 
 # Execute Bun runtime
 exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts

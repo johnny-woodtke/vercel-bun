@@ -6,6 +6,7 @@ import {
   type BuildV3,
   type Files,
 } from "@vercel/build-utils";
+import { mkdir, writeFile } from "fs/promises";
 import JSZip from "jszip";
 import { dirname, join, resolve } from "path";
 
@@ -16,7 +17,6 @@ export const build: BuildV3 = async function ({
   workPath,
   repoRootPath,
   meta,
-  ...rest
 }) {
   // Check if dev mode is used
   if (meta?.isDev) {
@@ -50,7 +50,7 @@ export const build: BuildV3 = async function ({
 
   console.log("Extracting bun binary");
 
-  // Unzip the Bun binary
+  // Load the archive
   let archive: JSZip;
   try {
     archive = await JSZip.loadAsync(await res.arrayBuffer());
@@ -61,13 +61,28 @@ export const build: BuildV3 = async function ({
 
   console.log(`Extracted archive: ${Object.keys(archive.files)}`);
 
-  // Get bun
+  // Get bun from archive
   const bun = archive.filter(
     (_, { dir, name }) => !dir && name.endsWith("bun")
   )[0];
   if (!bun) {
     throw new Error("Failed to find executable in zip");
   }
+
+  // Get cwd of bun
+  const cwd = bun.name.split("/")[0];
+  archive = cwd ? archive.folder(cwd) ?? archive : archive;
+
+  // Extract the binary to the workPath
+  const bunBinaryPath = join(workPath, "bin");
+  await mkdir(bunBinaryPath, { recursive: true });
+
+  // Generate the archive and save the Bun binary
+  const bunExecutable = await bun.async("nodebuffer");
+  const bunOutputPath = join(bunBinaryPath, "bun");
+  await writeFile(bunOutputPath, bunExecutable, { mode: 0o755 });
+
+  console.log(`Extracted Bun binary to: ${bunOutputPath}`);
 
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
@@ -89,11 +104,16 @@ export const build: BuildV3 = async function ({
       mode: 0o644,
       fsPath: resolve(currentDir, "runtime.ts"),
     }),
+    "bin/bun": new FileFsRef({
+      mode: 0o755,
+      fsPath: bunOutputPath,
+    }),
   };
 
   // Log the paths of the runtime files
   console.log(`Bootstrap path: ${resolve(currentDir, "bootstrap")}`);
   console.log(`Runtime.ts path: ${resolve(currentDir, "runtime.ts")}`);
+  console.log(`Bun binary path: ${bunOutputPath}`);
 
   // Get provided runtime
   const providedRuntime = await getProvidedRuntime();
@@ -127,6 +147,10 @@ export const build: BuildV3 = async function ({
       ? join(config.projectSettings.rootDirectory, entrypoint)
       : entrypoint,
     runtime: providedRuntime,
+    environment: {
+      BUN_VERSION: "1.2.13",
+    },
+    supportsWrapper: true, // Enable support for large environment variables
   });
 
   // Return the Lambda function
