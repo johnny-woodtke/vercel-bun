@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 
-const app = new Elysia().get("/server", () => `Hello from bun@${Bun.version}`, {
+const app = new Elysia({ prefix: "/api" }).get("/server", () => `Hello from bun@${Bun.version}`, {
   response: t.String(),
 });
 
