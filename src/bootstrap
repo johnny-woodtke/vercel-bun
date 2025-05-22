@@ -26,6 +26,8 @@ fi
 echo "Using Bun binary: $BUN_BINARY"
 
 # Log environment information
+echo "Environment variables:"
+env
 echo "Lambda Task Root: $LAMBDA_TASK_ROOT"
 echo "Handler: $_HANDLER"
 echo "AWS Lambda Runtime API: $AWS_LAMBDA_RUNTIME_API"
