@@ -1,26 +1,15 @@
 #! /bin/sh
 
-# Ensure bootstrap file is in the expected location
-if [ ! -f /var/task/bootstrap ]; then
-  echo "Bootstrap not in expected location, attempting to copy"
-  cp "$0" /var/task/bootstrap
-  chmod +x /var/task/bootstrap
-fi
-
-# Find Bun binary - use the bundled version from build step
+# Fast path: Bun binary location (pre-computed during build)
 BUN_BINARY="/var/task/bin/bun"
 
-# Verify Bun binary exists, with fallback check
-if [ ! -x "$BUN_BINARY" ]; then
-  # Fallback to system bun if bundled version not found
-  BUN_BINARY="$(which bun 2>/dev/null)"
-  if [ ! -x "$BUN_BINARY" ]; then
-    echo "Error: Bun binary not found or not executable"
-    exit 1
-  fi
-fi
+# Fast verification - exit immediately if binary doesn't exist
+[ ! -x "$BUN_BINARY" ] && {
+  echo "Error: Bun binary not found at $BUN_BINARY"
+  exit 1
+}
 
-# Set up writable directories for Bun
+# Prepare writable directories for Bun
 export BUN_TMPDIR="/tmp"
 export BUN_INSTALL_CACHE_DIR="/tmp/.bun"
 export BUN_INSTALL_GLOBAL_DIR="/tmp/.bun"
@@ -28,5 +17,10 @@ export BUN_CONFIG_DIR="/tmp/.bun"
 export XDG_CACHE_HOME="/tmp/.cache"
 export HOME="/tmp"
 
-# Execute Bun runtime
+# Disable unnecessary features
+export BUN_DISABLE_ANALYTICS=1
+export BUN_DISABLE_UPGRADE_PROMPT=1
+export BUN_NO_UPDATE_NOTIFIER=1
+
+# Execute Bun runtime with optimized flags
 exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime/index.ts
