@@ -8,13 +8,5 @@ const app = new Elysia({ prefix: "/api" }).get(
   }
 );
 
-const isDev = process.env.NODE_ENV !== "production";
-
-if (isDev) {
-  app.listen({
-    port: 3000,
-  });
-  console.log("Server is running on http://localhost:3000");
-}
-
-export default app.handle;
+export const GET = app.handle;
+export const POST = app.handle;
