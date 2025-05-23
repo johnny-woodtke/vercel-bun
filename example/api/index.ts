@@ -1,8 +1,12 @@
 import { Elysia, t } from "elysia";
 
-const app = new Elysia({ prefix: "/api" }).get("/server", () => `Hello from bun@${Bun.version}`, {
-  response: t.String(),
-});
+const app = new Elysia({ prefix: "/api/index" }).get(
+  "/",
+  () => `Hello from bun@${Bun.version}`,
+  {
+    response: t.String(),
+  }
+);
 
 const isDev = process.env.NODE_ENV !== "production";
 
