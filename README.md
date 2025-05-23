@@ -11,7 +11,7 @@ Bun runtime for Vercel serverless functions
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.0.28"
+      "runtime": "@godsreveal/vercel-bun@0.0.30"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts
@@ -34,7 +34,7 @@ export default function handler(req: Request) {
 
 ### 3. Deploy to Vercel
 
-Commit your code and let Vercel's GitHub webhooks deploy your serverless function(s) to the web.
+Commit your code and let Vercel's GitHub webhook integrations deploy your serverless function(s) to the web.
 
 ## Features
 
