@@ -56,17 +56,15 @@ async function processEvents() {
   }
 }
 
-const { _HANDLER, ENTRYPOINT } = process.env;
-
-if (_HANDLER) {
+if (process.env._HANDLER) {
   // Runtime - execute the runtime loop
   processEvents().catch((e) => {
     console.error("processEvents error:", e.message);
     process.exit(1);
   });
-} else {
+} else if (process.env.ENTRYPOINT) {
   // Build - import the entrypoint so that it gets cached
-  import(ENTRYPOINT!).catch((e) => {
+  import(process.env.ENTRYPOINT).catch((e) => {
     console.error("Failed to import entrypoint:", e.message);
     process.exit(1);
   });
