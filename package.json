@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "Bun runtime for Vercel serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
