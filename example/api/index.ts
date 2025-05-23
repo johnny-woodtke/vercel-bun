@@ -4,15 +4,9 @@ const app = new Elysia({ prefix: "/api" })
   .get("/", () => `Hello from bun@${Bun.version}`, {
     response: t.String(),
   })
-  .get(
-    "/hello",
-    ({ params }) => ({
-      message: `Hello ${params.firstName} ${params.lastName}`,
-    }),
-    {
-      params: t.Object({ firstName: t.String(), lastName: t.String() }),
-    }
-  );
+  .get("/hello", ({ query }) => `Hello ${query.firstName} ${query.lastName}`, {
+    query: t.Object({ firstName: t.String(), lastName: t.String() }),
+  });
 
 const isDev = process.env.NODE_ENV !== "production";
 
