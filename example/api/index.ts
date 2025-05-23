@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 
-const app = new Elysia({ prefix: "/api/index" }).get(
+const app = new Elysia({ prefix: "/api" }).get(
   "/",
   () => `Hello from bun@${Bun.version}`,
   {
