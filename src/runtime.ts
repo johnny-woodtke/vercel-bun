@@ -39,36 +39,30 @@ function fromVercelRequest(payload: VercelRequestPayload): Request {
   const url = new URL(payload.path, base);
   const body = payload.body ? Buffer.from(payload.body, "base64") : undefined;
 
-  return new Request(url.href, {
-    method: payload.method,
-    headers,
-    body,
-  });
+  return new Request(url.href, { method: payload.method, headers, body });
 }
 
 function headersToVercelHeaders(
   headers: Headers
 ): Record<string, string | string[]> {
-  const h: Record<string, string | string[]> = {};
+  const result: Record<string, string | string[]> = {};
   for (const [name, value] of headers) {
-    const cur = h[name];
-    if (typeof cur === "string") {
-      h[name] = [cur, value];
-    } else if (Array.isArray(cur)) {
-      cur.push(value);
+    const current = result[name];
+    if (typeof current === "string") {
+      result[name] = [current, value];
+    } else if (Array.isArray(current)) {
+      current.push(value);
     } else {
-      h[name] = value;
+      result[name] = value;
     }
   }
-  return h;
+  return result;
 }
 
 async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
-  let body = "";
   const bodyBuffer = await res.arrayBuffer();
-  if (bodyBuffer.byteLength > 0) {
-    body = Buffer.from(bodyBuffer).toString("base64");
-  }
+  const body =
+    bodyBuffer.byteLength > 0 ? Buffer.from(bodyBuffer).toString("base64") : "";
 
   return {
     statusCode: res.status,
@@ -78,58 +72,68 @@ async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
   };
 }
 
+async function httpRequest2Promise<T>(
+  url: string,
+  options: any = {},
+  responseHandler: (res: any) => Promise<T>
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest(url, options, (res) => {
+      responseHandler(res).then(resolve).catch(reject);
+    });
+    req.on("error", reject);
+    if (options.body) req.write(options.body);
+    req.end();
+  });
+}
+
 async function nextInvocation() {
-  return new Promise<{ event: any; awsRequestId: string }>(
-    (resolve, reject) => {
-      const req = httpRequest(
-        `http://${AWS_LAMBDA_RUNTIME_API}/${RUNTIME_PATH}/invocation/next`,
-        (res) => {
-          const traceId = res.headers["lambda-runtime-trace-id"];
-          if (typeof traceId === "string") {
-            process.env._X_AMZN_TRACE_ID = traceId;
-          } else {
-            delete process.env._X_AMZN_TRACE_ID;
-          }
+  return httpRequest2Promise<{ event: any; awsRequestId: string }>(
+    `http://${AWS_LAMBDA_RUNTIME_API}/${RUNTIME_PATH}/invocation/next`,
+    {},
+    async (res) => {
+      // Set trace ID if available
+      const traceId = res.headers["lambda-runtime-trace-id"];
+      if (typeof traceId === "string") {
+        process.env._X_AMZN_TRACE_ID = traceId;
+      } else {
+        delete process.env._X_AMZN_TRACE_ID;
+      }
 
-          const awsRequestId = res.headers["lambda-runtime-aws-request-id"];
-          if (typeof awsRequestId !== "string") {
-            return reject(
-              new Error(
-                'Did not receive "lambda-runtime-aws-request-id" header'
-              )
-            );
-          }
+      // Get request ID
+      const awsRequestId = res.headers["lambda-runtime-aws-request-id"];
+      if (typeof awsRequestId !== "string") {
+        throw new Error(
+          'Did not receive "lambda-runtime-aws-request-id" header'
+        );
+      }
 
-          let body = "";
-          res.on("data", (chunk) => (body += chunk));
+      // Get response body
+      let body = "";
+      return new Promise<{ event: any; awsRequestId: string }>(
+        (resolve, reject) => {
+          res.on("data", (chunk: string) => (body += chunk));
           res.on("end", () => {
             try {
-              const event = JSON.parse(body);
-              resolve({ event, awsRequestId });
+              resolve({ event: JSON.parse(body), awsRequestId });
             } catch (err) {
               reject(err);
             }
           });
         }
       );
-
-      req.on("error", reject);
-      req.end();
     }
   );
 }
 
-function performRequest(
-  path: string,
-  options: any = {}
-): Promise<{ status: number; headers: any; body: string }> {
-  return new Promise((resolve, reject) => {
-    const req = httpRequest(
-      `http://${AWS_LAMBDA_RUNTIME_API}/${RUNTIME_PATH}/${path}`,
-      options,
-      (res) => {
-        let body = "";
-        res.on("data", (chunk) => (body += chunk));
+async function performRequest(path: string, options: any = {}) {
+  return httpRequest2Promise<{ status: number; headers: any; body: string }>(
+    `http://${AWS_LAMBDA_RUNTIME_API}/${RUNTIME_PATH}/${path}`,
+    options,
+    async (res) => {
+      let body = "";
+      return new Promise((resolve) => {
+        res.on("data", (chunk: string) => (body += chunk));
         res.on("end", () => {
           resolve({
             status: res.statusCode || 200,
@@ -137,16 +141,9 @@ function performRequest(
             body,
           });
         });
-      }
-    );
-
-    req.on("error", reject);
-
-    if (options.body) {
-      req.write(options.body);
+      });
     }
-    req.end();
-  });
+  );
 }
 
 async function invokeResponse(
@@ -155,9 +152,7 @@ async function invokeResponse(
 ) {
   const res = await performRequest(`invocation/${awsRequestId}/response`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(result),
   });
 
@@ -199,9 +194,9 @@ async function processEvents(): Promise<void> {
   while (true) {
     try {
       const { event, awsRequestId } = await nextInvocation();
-      let result: VercelResponsePayload;
 
       try {
+        // Load handler if not already loaded
         if (!handler) {
           try {
             const mod = await import(`./${_HANDLER}`);
@@ -221,9 +216,9 @@ async function processEvents(): Promise<void> {
           }
         }
 
+        // Process the request
         const payload = JSON.parse(event.body) as VercelRequestPayload;
         const req = fromVercelRequest(payload);
-
         const connInfo: ConnInfo = {
           remoteAddr: {
             hostname: "127.0.0.1",
@@ -232,17 +227,15 @@ async function processEvents(): Promise<void> {
           },
         };
 
-        // Run user code
+        // Run user code and send response
         const res = await handler(req, connInfo);
-        result = await toVercelResponse(res);
+        const result = await toVercelResponse(res);
+        await invokeResponse(result, awsRequestId);
       } catch (e: unknown) {
         const err = e instanceof Error ? e : new Error(String(e));
         console.error(err);
         await invokeError(err, awsRequestId);
-        continue;
       }
-
-      await invokeResponse(result, awsRequestId);
     } catch (err) {
       console.error("Lambda runtime error:", err);
       // Wait a bit before retrying
@@ -250,9 +243,6 @@ async function processEvents(): Promise<void> {
     }
   }
 }
-
-// Log bun version
-console.log(`Running with bun@${Bun.version}`);
 
 if (_HANDLER) {
   // Runtime - execute the runtime loop
