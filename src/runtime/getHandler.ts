@@ -1,7 +1,8 @@
-import { HANDLER_PATH } from "./constants";
 import type { Handler } from "./types";
 
 let handler: Handler | null = null;
+
+const HANDLER_PATH = `./${process.env._HANDLER}`;
 
 export async function getHandler(): Promise<Handler> {
   if (handler) return handler;

@@ -25,7 +25,6 @@ export const build: BuildV3 = async function ({
 }) {
   // Determine architecture - Vercel's AWS Lambda runs on x64 by default
   const arch = process.arch === "arm64" ? "aarch64" : buildConfig.defaultArch;
-  console.log(`Process arch: ${arch}`);
 
   // Determine Bun version
   const bunVersion = process.env.BUN_VERSION ?? buildConfig.defaultBunVersion;
@@ -75,7 +74,6 @@ export const build: BuildV3 = async function ({
 
   // Get the directory where this file is located
   const currentDir = dirname(__filename);
-  console.log(`Current directory: ${currentDir}`);
 
   // Extract the binary to the workPath
   const bunBinaryPath = resolve(currentDir, "bin");
