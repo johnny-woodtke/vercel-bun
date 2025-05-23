@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "Bun runtime for Vercel serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && cp src/bootstrap src/runtime.ts dist",
+    "build": "rm -rf dist && tsc && cp -r src/bootstrap src/runtime dist",
     "build:vercel": "bunx vercel build",
     "pull:vercel": "bunx vercel pull",
     "release": "bun run --bun build && npm publish",

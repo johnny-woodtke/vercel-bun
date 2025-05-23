@@ -8,7 +8,7 @@ import {
 } from "@vercel/build-utils";
 import { mkdir, writeFile } from "fs/promises";
 import JSZip from "jszip";
-import { dirname, join, resolve } from "path";
+import { dirname, resolve } from "path";
 
 const buildConfig = {
   defaultBunVersion: "1.2.13",
@@ -24,12 +24,15 @@ export const build: BuildV3 = async function ({
   meta,
 }) {
   // Determine architecture - Vercel's AWS Lambda runs on x64 by default
-  console.log(`Process arch: ${process.arch}`);
   const arch = process.arch === "arm64" ? "aarch64" : buildConfig.defaultArch;
+  console.log(`Process arch: ${arch}`);
+
+  // Determine Bun version
+  const bunVersion = process.env.BUN_VERSION ?? buildConfig.defaultBunVersion;
 
   // Get the Bun binary URL for the right architecture
   const { href } = new URL(
-    `https://bun.sh/download/${buildConfig.defaultBunVersion}/linux/${arch}?avx2=true`
+    `https://bun.sh/download/${bunVersion}/linux/${arch}?avx2=true`
   );
   console.log(`Downloading bun binary: ${href}`);
 
@@ -66,7 +69,7 @@ export const build: BuildV3 = async function ({
     throw new Error("Failed to find executable in zip");
   }
 
-  // Get cwd of bun
+  // Ensure the archive isn't a directory
   const cwd = bun.name.split("/")[0];
   archive = cwd ? archive.folder(cwd) ?? archive : archive;
 
@@ -85,27 +88,51 @@ export const build: BuildV3 = async function ({
 
   // Download runtime files containing Bun modules
   const runtimeFiles: Files = {
-    // Append Bun files
-    bootstrap: new FileFsRef({
-      mode: 0o755, // Make it executable
-      fsPath: resolve(currentDir, "bootstrap"),
-    }),
-    "runtime.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime.ts"),
-    }),
+    // Save bun binary
     "bin/bun": new FileFsRef({
       mode: 0o755,
       fsPath: bunOutputPath,
     }),
+
+    // Save bootstrap
+    bootstrap: new FileFsRef({
+      mode: 0o755, // Make it executable
+      fsPath: resolve(currentDir, "bootstrap"),
+    }),
+
+    // Save runtime files
+    "runtime/index.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/index.ts"),
+    }),
+    "runtime/constants.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/constants.ts"),
+    }),
+    "runtime/getHandler.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/getHandler.ts"),
+    }),
+    "runtime/http.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/http.ts"),
+    }),
+    "runtime/lambda.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/lambda.ts"),
+    }),
+    "runtime/transforms.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/transforms.ts"),
+    }),
+    "runtime/types.ts": new FileFsRef({
+      mode: 0o644,
+      fsPath: resolve(currentDir, "runtime/types.ts"),
+    }),
   };
-  console.log("Runtime files");
-  console.log(JSON.stringify(runtimeFiles, null, 2));
 
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
-  console.log("User files");
-  console.log(JSON.stringify(userFiles, null, 2));
 
   // Create Lambda
   const lambda = new Lambda({
@@ -116,8 +143,7 @@ export const build: BuildV3 = async function ({
     handler: entrypoint,
     runtime: await getProvidedRuntime(),
   });
-
-  console.log(`Handler path set to: ${lambda.handler}`);
+  console.log(`Created Lambda with bun@${bunVersion} runtime`);
 
   // Return the Lambda function
   return {

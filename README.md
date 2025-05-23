@@ -11,7 +11,7 @@ Bun runtime for Vercel serverless functions
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.0.30"
+      "runtime": "@godsreveal/vercel-bun@0.0.31"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts

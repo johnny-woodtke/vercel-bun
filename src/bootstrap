@@ -7,26 +7,18 @@ if [ ! -f /var/task/bootstrap ]; then
   chmod +x /var/task/bootstrap
 fi
 
-# Find Bun binary - check bundled version first
-BUN_BINARY=""
-for path in "/var/task/bin/bun" "/var/runtime/bin/bun" "/var/lang/bin/bun" "/opt/bun" "$(which bun 2>/dev/null)"; do
-  if [ -x "$path" ]; then
-    BUN_BINARY="$path"
-    break
-  fi
-done
+# Find Bun binary - use the bundled version from build step
+BUN_BINARY="/var/task/bin/bun"
 
-# Verify Bun binary exists
+# Verify Bun binary exists, with fallback check
 if [ ! -x "$BUN_BINARY" ]; then
-  echo "Error: Bun binary not found or not executable"
-  exit 1
+  # Fallback to system bun if bundled version not found
+  BUN_BINARY="$(which bun 2>/dev/null)"
+  if [ ! -x "$BUN_BINARY" ]; then
+    echo "Error: Bun binary not found or not executable"
+    exit 1
+  fi
 fi
-
-# Log environment information
-echo "Using Bun binary: $BUN_BINARY"
-echo "Lambda Task Root: $LAMBDA_TASK_ROOT"
-echo "Handler: $_HANDLER"
-echo "AWS Lambda Runtime API: $AWS_LAMBDA_RUNTIME_API"
 
 # Set up writable directories for Bun
 export BUN_TMPDIR="/tmp"
@@ -37,4 +29,4 @@ export XDG_CACHE_HOME="/tmp/.cache"
 export HOME="/tmp"
 
 # Execute Bun runtime
-exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime.ts
+exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime/index.ts
