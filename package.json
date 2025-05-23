@@ -1,8 +1,8 @@
 {
   "private": false,
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.28",
-  "description": "Vercel Bun Runtime",
+  "version": "0.0.30",
+  "description": "Bun runtime for Vercel serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "Johnny Woodtke",
@@ -26,7 +26,6 @@
     "release:dry": "bun run release --dry-run"
   },
   "dependencies": {
-    "aws4fetch": "^1.0.17",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

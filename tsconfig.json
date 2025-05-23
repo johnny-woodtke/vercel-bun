@@ -11,7 +11,7 @@
     "moduleResolution": "node",
     "allowImportingTsExtensions": false,
     "noEmit": false,
-    "outDir": "./dist",
+    "outDir": "dist",
     "declaration": true,
     "esModuleInterop": true,
 
@@ -26,6 +26,6 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src/runtime.ts"]
 }

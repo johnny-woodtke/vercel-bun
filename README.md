@@ -1,23 +1,54 @@
 # vercel-bun
 
-Bun runtime for Vercel Serverless Functions
+Bun runtime for Vercel serverless functions
 
-## Resources
+## Usage
 
-### Official
+### 1. Configure your `vercel.json` file
 
-- [Runtimes Docs](https://vercel.com/docs/functions/runtimes)
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@godsreveal/vercel-bun@0.0.28"
+    }
+  },
+  // Optional: use if you want all /api routes to be handled by /api/index.ts
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index.ts" }]
+}
+```
 
-- [Developing a Runtime Docs](https://github.com/vercel/vercel/blob/main/DEVELOPING_A_RUNTIME.md)
+### 2. Create a Bun serverless function
 
-- [Node.js Runtime Repo](https://github.com/vercel/vercel/tree/main/packages/node)
+Create an API endpoint in your project:
 
-- [Lambda Bun Runtime Repo](https://github.com/oven-sh/bun/tree/main/packages/bun-lambda)
+```typescript
+// api/index.ts
+export default function handler(req: Request) {
+  return new Response(JSON.stringify({ message: `Hello from bun@${Bun.version}` }), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+```
 
-### Community
+### 3. Deploy to Vercel
 
-- [Vercel Bun Runtime Repo](https://github.com/vercel-community/bun)
+Commit your code and let Vercel's GitHub webhooks deploy your serverless function(s) to the web.
 
-- [Vercel Bash Runtime Repo](https://github.com/vercel-community/bash)
+## Features
 
-- [Vercel Deno Runtime Repo](https://github.com/vercel-community/deno)
+- Uses Bun runtime (version 1.2.13 by default)
+- Supports Bun's native `Request` and `Response` interface
+- Works seamlessly with Vercel's serverless infrastructure
+
+## Examples
+
+See the [example](./example) directory for a complete example of using this runtime with a Next.js project.
+
+- `/api`: https://vercel-bun-nine.vercel.app/api
+- `/api/hello`: https://vercel-bun-nine.vercel.app/api/hello?firstName=Johnny&lastName=Woodtke
+
+## License
+
+MIT
