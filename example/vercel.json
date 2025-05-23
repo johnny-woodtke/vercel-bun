@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/**/*": {
+    "api/index.ts": {
       "runtime": "@godsreveal/vercel-bun@0.0.28"
     }
-  }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index.ts" }]
 }
