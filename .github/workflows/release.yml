@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -41,7 +41,7 @@ jobs:
           node-version: "18"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: bun install
 
       - name: Configure Git
@@ -50,7 +50,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
-      - name: Increment Version
+      - name: Increment version
         run: |
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -88,10 +88,10 @@ jobs:
           # Set environment variable for later steps
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Build Package
+      - name: Build package
         run: bun run build
 
-      - name: Run Tests
+      - name: Run tests
         run: |
           if grep -q '"test"' package.json; then
             bun test
@@ -99,18 +99,18 @@ jobs:
             echo "No tests found, skipping..."
           fi
 
-      - name: Publish to n  pm
+      - name: Publish to npm
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Commit and Push Changes
+      - name: Commit and push changes
         run: |
           git add package.json
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }}"
           git push
 
-      - name: Create and Push Tag
+      - name: Create and push tag
         run: |
           git tag -a "v${{ env.NEW_VERSION }}" -m "Release v${{ env.NEW_VERSION }}"
           git push origin "v${{ env.NEW_VERSION }}"
