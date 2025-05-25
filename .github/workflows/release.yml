@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -41,7 +41,7 @@ jobs:
           node-version: "18"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: bun install
 
       - name: Configure Git
@@ -50,7 +50,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
-      - name: Increment version
+      - name: Increment Version
         run: |
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -88,10 +88,10 @@ jobs:
           # Set environment variable for later steps
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Build package
+      - name: Build Package
         run: bun run build
 
-      - name: Run tests (if any)
+      - name: Run Tests
         run: |
           if grep -q '"test"' package.json; then
             bun test
@@ -99,29 +99,27 @@ jobs:
             echo "No tests found, skipping..."
           fi
 
-      - name: Publish to npm
+      - name: Publish to n  pm
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Commit and push changes
+      - name: Commit and Push Changes
         run: |
           git add package.json
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }}"
           git push
 
-      - name: Create and push tag
+      - name: Create and Push Tag
         run: |
           git tag -a "v${{ env.NEW_VERSION }}" -m "Release v${{ env.NEW_VERSION }}"
           git push origin "v${{ env.NEW_VERSION }}"
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.NEW_VERSION }}
-          release_name: Release v${{ env.NEW_VERSION }}
+          name: Release v${{ env.NEW_VERSION }}
           body: |
             ## Changes in v${{ env.NEW_VERSION }}
 
@@ -130,3 +128,5 @@ jobs:
             **Version Type:** ${{ github.event.inputs.version_type }}
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
