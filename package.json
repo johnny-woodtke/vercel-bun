@@ -1,10 +1,17 @@
 {
-  "private": false,
   "name": "@godsreveal/vercel-bun",
   "version": "0.0.41",
   "description": "Bun runtime for Vercel serverless functions",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "keywords": [
+    "vercel",
+    "bun",
+    "serverless",
+    "runtime",
+    "typescript",
+    "javascript",
+    "elysia",
+    "nextjs"
+  ],
   "author": "Johnny Woodtke",
   "license": "MIT",
   "homepage": "https://github.com/johnny-woodtke/vercel-bun",
@@ -12,9 +19,14 @@
     "type": "git",
     "url": "git+https://github.com/johnny-woodtke/vercel-bun.git"
   },
+  "bugs": {
+    "url": "https://github.com/johnny-woodtke/vercel-bun/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -27,7 +39,7 @@
     "jszip": "^3.10.1"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.2.13"
   },
   "peerDependencies": {
     "typescript": "^5",
