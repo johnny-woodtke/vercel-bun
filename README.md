@@ -4,7 +4,7 @@ Bun runtime for Vercel serverless functions
 
 ## Overview
 
-`@godsreveal/vercel-bun` is a custom Vercel runtime that enables you to run serverless functions using the [Bun](https://bun.sh) JavaScript runtime instead of Node.js. This runtime provides improved performance, better TypeScript support, and access to Bun's native APIs.
+vercel-bun is a custom Vercel runtime that enables you to run serverless functions using the [Bun](https://bun.sh) JavaScript runtime instead of Node.js. This runtime provides improved performance, better TypeScript support, and access to Bun's native APIs.
 
 ## Features
 
@@ -84,7 +84,7 @@ if (process.env.NODE_ENV !== "production") {
 export default app.handle;
 ```
 
-### 3. Configure and Deploy to Vercel
+### 3. Deploy to Vercel
 
 Deploy your GitHub repository to [Vercel](https://vercel.com/docs/git#deploying-a-git-repository).
 
