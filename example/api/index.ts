@@ -394,7 +394,7 @@ const app = new Elysia({ prefix: "/api" })
   .get(
     "/cache",
     ({ set }) => {
-      set.headers["Cache-Control"] = "public, max-age=3600";
+      set.headers["cache-control"] = "public, max-age=3600";
       return {
         message: "Cache control header set",
         timestamp: new Date().toISOString(),
