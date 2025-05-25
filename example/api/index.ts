@@ -389,6 +389,23 @@ const app = new Elysia({ prefix: "/api" })
         message: t.String(),
       }),
     }
+  )
+
+  .get(
+    "/cache",
+    ({ set }) => {
+      set.headers["Cache-Control"] = "public, max-age=3600";
+      return {
+        message: "Cache control header set",
+        timestamp: new Date().toISOString(),
+      };
+    },
+    {
+      response: t.Object({
+        message: t.String(),
+        timestamp: t.String(),
+      }),
+    }
   );
 
 if (process.env.NODE_ENV !== "production") {
