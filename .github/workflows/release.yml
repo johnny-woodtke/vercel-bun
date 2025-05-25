@@ -13,6 +13,11 @@ on:
           - minor
           - major
 
+permissions:
+  contents: write
+  actions: read
+  packages: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -23,6 +28,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -42,6 +48,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
       - name: Increment version
         run: |
