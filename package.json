@@ -21,9 +21,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc && cp -r src/bootstrap src/runtime dist",
     "build:vercel": "bunx vercel build",
-    "pull:vercel": "bunx vercel pull",
-    "release": "bun run --bun build && npm publish",
-    "release:dry": "bun run release --dry-run"
+    "pull:vercel": "bunx vercel pull"
   },
   "dependencies": {
     "jszip": "^3.10.1"
