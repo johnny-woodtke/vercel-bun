@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev:next": "next dev --port 3001",
+    "dev:next": "next dev -p 3001",
     "dev:server": "bun run --watch api/index.ts",
     "build": "next build",
     "start": "next start",
