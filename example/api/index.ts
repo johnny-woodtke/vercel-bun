@@ -40,6 +40,7 @@ const app = new Elysia({ prefix: "/api" })
           id: t.Number(),
           name: t.String(),
           email: t.String(),
+          createdAt: t.String(),
         }),
         t.Object({
           error: t.String(),
@@ -52,6 +53,13 @@ const app = new Elysia({ prefix: "/api" })
     "/status/:code",
     ({ params, set }) => {
       const statusCode = parseInt(params.code);
+
+      // Validate status code range
+      if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
+        set.status = 400;
+        return { error: "Invalid status code. Must be between 100-599" };
+      }
+
       set.status = statusCode;
       set.headers["x-custom-header"] = "test-value";
       switch (statusCode) {
@@ -164,6 +172,7 @@ const app = new Elysia({ prefix: "/api" })
           id: t.Number(),
           name: t.String(),
           email: t.String(),
+          updatedAt: t.String(),
         }),
         t.Object({
           error: t.String(),
@@ -182,12 +191,22 @@ const app = new Elysia({ prefix: "/api" })
         return { error: "Invalid user ID" };
       }
 
-      return {
+      // Simulate getting existing user data
+      const existingUser = {
         id: userId,
-        name: body.name,
-        email: body.email,
+        name: "John Doe",
+        email: "john@example.com",
+      };
+
+      // Only update provided fields
+      const updatedUser = {
+        id: userId,
+        name: body.name ?? existingUser.name,
+        email: body.email ?? existingUser.email,
         updatedAt: new Date().toISOString(),
       };
+
+      return updatedUser;
     },
     {
       params: t.Object({
@@ -200,8 +219,8 @@ const app = new Elysia({ prefix: "/api" })
       response: t.Union([
         t.Object({
           id: t.Number(),
-          name: t.Optional(t.String()),
-          email: t.Optional(t.String()),
+          name: t.String(),
+          email: t.String(),
           updatedAt: t.String(),
         }),
         t.Object({
@@ -409,10 +428,9 @@ const app = new Elysia({ prefix: "/api" })
   );
 
 if (Bun.env.NODE_ENV !== "production") {
-  app.listen({ port: Bun.env.SERVER_PORT });
-  console.log(
-    `🚀 Elysia is running at http://localhost:${Bun.env.SERVER_PORT}/api`
-  );
+  const port = Bun.env.SERVER_PORT || 3000;
+  app.listen({ port });
+  console.log(`🚀 Elysia is running at http://localhost:${port}/api`);
 }
 
 export default app.handle;
