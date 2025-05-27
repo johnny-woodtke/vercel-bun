@@ -417,7 +417,7 @@ const app = new Elysia({ prefix: "/api" })
     ({ cacheControl }) => {
       cacheControl.set(
         "Cache-Control",
-        new CacheControl().setPublic(true).setMaxAge(600)
+        new CacheControl().set("public", true).set("max-age", 60)
       );
 
       return {
