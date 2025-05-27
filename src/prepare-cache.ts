@@ -1,7 +1,3 @@
-import { glob, type PrepareCache } from "@vercel/build-utils";
+import type { PrepareCache } from "@vercel/build-utils";
 
-export const prepareCache: PrepareCache = async function ({ workPath }) {
-  return {
-    ...(await glob("node_modules/**", workPath)),
-  };
-};
+export const prepareCache: PrepareCache | undefined = undefined;

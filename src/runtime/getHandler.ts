@@ -1,4 +1,5 @@
 import { resolve } from "path";
+
 import type { Handler } from "./types";
 
 let handler: Handler | null = null;
