@@ -34,7 +34,7 @@ The `/api` route demonstrates a wide range of serverless function capabilities:
 First, run the development servers:
 
 ```bash
-bun run --bun dev:next & bun run --bun dev:server
+bun run --bun dev:next & bun run --bun dev:api
 ```
 
 - **Next.js app**: [http://localhost:3001](http://localhost:3001)

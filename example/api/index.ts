@@ -1,6 +1,8 @@
 import { Elysia, t } from "elysia";
+import { cacheControl, CacheControl } from "elysiajs-cdn-cache";
 
 const app = new Elysia({ prefix: "/api" })
+  .use(cacheControl())
 
   .get("/", () => `Hello from bun@${Bun.version}`, {
     response: t.String(),
@@ -412,8 +414,12 @@ const app = new Elysia({ prefix: "/api" })
 
   .get(
     "/cache",
-    ({ set }) => {
-      set.headers["cache-control"] = "public, max-age=3600";
+    ({ cacheControl }) => {
+      cacheControl.set(
+        "Cache-Control",
+        new CacheControl().setPublic(true).setMaxAge(600)
+      );
+
       return {
         message: "Cache control header set",
         timestamp: new Date().toISOString(),
