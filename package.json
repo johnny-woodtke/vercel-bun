@@ -1,6 +1,6 @@
 {
   "name": "@godsreveal/vercel-bun",
-  "version": "0.0.46",
+  "version": "0.0.47",
   "description": "Bun runtime for Vercel serverless functions",
   "keywords": [
     "vercel",
