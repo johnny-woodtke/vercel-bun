@@ -71,7 +71,7 @@ This example is configured to deploy with the vercel-bun runtime:
 {
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.0.47"
+      "runtime": "@godsreveal/vercel-bun@0.0.48"
     }
   },
   "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index.ts" }]
