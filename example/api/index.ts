@@ -434,9 +434,10 @@ const app = new Elysia({ prefix: "/api" })
   );
 
 if (Bun.env.NODE_ENV !== "production") {
-  const port = Bun.env.SERVER_PORT || 3000;
-  app.listen({ port });
-  console.log(`🚀 Elysia is running at http://localhost:${port}/api`);
+  app.listen({ port: Bun.env.API_PORT || 3000 });
+  console.log(
+    `🚀 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  );
 }
 
 export default app.handle;
