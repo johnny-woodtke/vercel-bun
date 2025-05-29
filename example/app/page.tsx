@@ -1,119 +1,290 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect } from "react";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { eden } from "@/lib/eden";
-import { getApiHost, getVercelEnv } from "@/lib/utils";
+import type { RedisEntry } from "@/lib/redis";
+
+interface Stats {
+  sessionId: string;
+  entryCount: number;
+  ttlSeconds: number;
+}
 
 export default function Home() {
-  useEffect(() => {
-    console.log("vercel env", getVercelEnv());
+  const [entries, setEntries] = useState<RedisEntry[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [newText, setNewText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-    console.log("api host", getApiHost());
-
-    eden.api.get().then((res) => {
-      console.log("eden res", res);
-    });
+  const loadEntries = useCallback(async () => {
+    try {
+      const response = await eden.api.redis.entries.get();
+      if (response.data?.success) {
+        setEntries(response.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to load entries:", error);
+    }
   }, []);
 
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await eden.api.redis.stats.get();
+      if (response.data?.success) {
+        setStats(response.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to load stats:", error);
+    }
+  }, []);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const handleAddEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newText.trim() || isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const response = await eden.api.redis.entries.post({
+        text: newText.trim(),
+      });
+      if (response.data?.success) {
+        setNewText("");
+        await Promise.all([loadEntries(), loadStats()]);
+      }
+    } catch (error) {
+      console.error("Failed to add entry:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      const response = await eden.api.redis.entries({ id }).delete();
+      if (response.data?.success) {
+        await Promise.all([loadEntries(), loadStats()]);
+      }
+    } catch (error) {
+      console.error("Failed to delete entry:", error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([loadEntries(), loadStats()]);
+    } catch (error) {
+      console.error("Failed to refresh:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const formatTime = (isoString: string) => {
+    return new Date(isoString).toLocaleTimeString();
+  };
+
+  const getTimeRemaining = (expiresAt: string) => {
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    const remaining = Math.max(
+      0,
+      Math.floor((expires.getTime() - now.getTime()) / 1000)
+    );
+    return remaining;
+  };
+
+  useEffect(() => {
+    loadEntries();
+    loadStats();
+  }, [loadEntries, loadStats]);
+
+  // Auto-refresh entries every 5 seconds to show TTL updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadEntries();
+      loadStats();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [loadEntries, loadStats]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">
+              Redis Demo
+            </CardTitle>
+            <CardDescription className="text-center">
+              Session-scoped text entries with 120-second TTL
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Stats Card */}
+        {stats && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Session Info</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Session ID:</span>
+                  <p className="text-gray-600 font-mono break-all">
+                    {stats.sessionId}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium">Active Entries:</span>
+                  <p className="text-gray-600">{stats.entryCount}</p>
+                </div>
+                <div>
+                  <span className="font-medium">TTL:</span>
+                  <p className="text-gray-600">{stats.ttlSeconds} seconds</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add Entry Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Add New Entry</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAddEntry} className="flex gap-2">
+              <Input
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                placeholder="Enter text to store in Redis..."
+                maxLength={1000}
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={isLoading || !newText.trim()}>
+                <Plus className="w-4 h-4 mr-2" />
+                {isLoading ? "Adding..." : "Add"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Entries Table */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="text-lg">Active Entries</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {entries.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No entries found. Add some text above to get started!
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Text</TableHead>
+                      <TableHead className="w-32">Created</TableHead>
+                      <TableHead className="w-32">Expires</TableHead>
+                      <TableHead className="w-24">TTL</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {entries.map((entry) => {
+                      const timeRemaining = getTimeRemaining(entry.expiresAt);
+                      return (
+                        <TableRow key={entry.id}>
+                          <TableCell className="font-medium max-w-md">
+                            <div className="truncate">{entry.text}</div>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {formatTime(entry.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {formatTime(entry.expiresAt)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <span
+                              className={
+                                timeRemaining < 30
+                                  ? "text-red-600 font-medium"
+                                  : "text-green-600"
+                              }
+                            >
+                              {timeRemaining}s
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteEntry(entry.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-sm text-gray-500">
+              <p>Built with Next.js 15, Elysia, Bun Runtime, and Redis</p>
+              <p className="mt-1">
+                Entries automatically expire after 120 seconds • Table updates
+                every 5 seconds
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
