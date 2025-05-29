@@ -15,9 +15,6 @@ const app = new Elysia({ prefix: "/api" })
 
   // Add sessionId to the context
   .resolve({ as: "global" }, ({ cookie }) => {
-    console.log("session cookie", cookie.sessionId.value);
-
-    let sessionId: string;
     if (!cookie.sessionId.value) {
       cookie.sessionId.value = crypto.randomUUID();
       cookie.sessionId.httpOnly = true;
@@ -25,10 +22,8 @@ const app = new Elysia({ prefix: "/api" })
       cookie.sessionId.sameSite = "none";
       cookie.sessionId.secure = true;
     }
-
-    sessionId = cookie.sessionId.value;
     return {
-      sessionId,
+      sessionId: cookie.sessionId.value,
     };
   })
 
