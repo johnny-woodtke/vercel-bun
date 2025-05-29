@@ -1,21 +1,31 @@
 import { cors } from "@elysiajs/cors";
 import { Elysia, t } from "elysia";
 import { cacheControl, CacheControl } from "elysiajs-cdn-cache";
+
 import { SessionRedisService } from "@/lib/redis";
 
 const app = new Elysia({ prefix: "/api" })
-  .use(cors())
+  .use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  )
   .use(cacheControl())
 
   // Add sessionId to the context
   .resolve({ as: "global" }, ({ cookie }) => {
+    console.log("session cookie", cookie.sessionId.value);
+
     let sessionId: string;
     if (!cookie.sessionId.value) {
       cookie.sessionId.value = crypto.randomUUID();
-      cookie.sessionId.httpOnly = true;
+      // cookie.sessionId.httpOnly = true;
       cookie.sessionId.maxAge = 86400; // 24 hours
-      cookie.sessionId.sameSite = "lax";
+      cookie.sessionId.sameSite = "none";
+      cookie.sessionId.secure = true;
     }
+
     sessionId = cookie.sessionId.value;
     return {
       sessionId,
