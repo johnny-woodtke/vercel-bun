@@ -23,7 +23,7 @@ vercel-bun is a custom Vercel runtime that enables you to run serverless functio
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.0.49"
+      "runtime": "@godsreveal/vercel-bun@0.0.50"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts
@@ -100,15 +100,10 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/docs/git#deploying-
 
 See the [example](./example) directory for a complete example of using this runtime with a Next.js project.
 
-**Live Demo:**
-
-- `/api`: https://vercel-bun-nine.vercel.app/api
-- `/api/hello`: https://vercel-bun-nine.vercel.app/api/hello?firstName=Johnny&lastName=Woodtke
+**[Live Bun Redis Client Demo](https://vercel-bun-nine.vercel.app)**
 
 ## Next Steps
 
-- [ ] **Type Safety**: Showcase end-to-end type safety with [Eden](https://elysiajs.com/eden/overview) for seamless client-server communication.
-- [ ] **Database Integration**: Add examples demonstrating [Vercel Redis](https://vercel.com/docs/storage/vercel-kv) integration with [Bun's native Redis client](https://bun.sh/docs/api/redis).
 - [ ] **Performance Benchmarks**: Create performance comparisons between Bun and Node.js runtimes.
 - [ ] **Framework Examples**: Add more framework examples (Hono, Fastify, etc.).
 
