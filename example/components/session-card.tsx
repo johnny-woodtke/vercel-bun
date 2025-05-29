@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useRedisStats } from "@/hooks/use-redis-stats";
 import { useSession } from "@/hooks/use-session";
-import { useRedisStats, type Stats } from "@/hooks/use-redis-stats";
 
 export function SessionCard() {
   const [newSessionId, setNewSessionId] = useState("");

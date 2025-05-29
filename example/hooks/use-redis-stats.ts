@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { eden } from "@/lib/eden";
 
 export interface Stats {

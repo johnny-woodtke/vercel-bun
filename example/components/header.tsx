@@ -10,7 +10,7 @@ export function Header() {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-center">
-          Redis Demo
+          Bun Redis Client Demo
         </CardTitle>
         <CardDescription className="text-center">
           Session-scoped text entries with 120-second TTL
