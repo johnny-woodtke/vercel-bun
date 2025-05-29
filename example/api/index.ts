@@ -20,7 +20,7 @@ const app = new Elysia({ prefix: "/api" })
     let sessionId: string;
     if (!cookie.sessionId.value) {
       cookie.sessionId.value = crypto.randomUUID();
-      // cookie.sessionId.httpOnly = true;
+      cookie.sessionId.httpOnly = true;
       cookie.sessionId.maxAge = 86400; // 24 hours
       cookie.sessionId.sameSite = "none";
       cookie.sessionId.secure = true;
