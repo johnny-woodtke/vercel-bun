@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Edit, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,8 +34,10 @@ export default function Home() {
   const [entries, setEntries] = useState<RedisEntry[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [newText, setNewText] = useState("");
+  const [newSessionId, setNewSessionId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUpdatingSession, setIsUpdatingSession] = useState(false);
 
   const loadEntries = useCallback(async () => {
     try {
@@ -58,6 +61,44 @@ export default function Home() {
     }
   }, []);
 
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSessionId.trim() || isUpdatingSession) return;
+
+    setIsUpdatingSession(true);
+    try {
+      const response = await eden.api.session.post({
+        sessionId: newSessionId.trim(),
+      });
+      if (response.data) {
+        setNewSessionId("");
+        // Refresh stats and entries after session update
+        await Promise.all([loadEntries(), loadStats()]);
+        toast.success("Session ID updated successfully!");
+      }
+    } catch (error) {
+      console.error("Failed to update session:", error);
+      toast.error("Failed to update session ID");
+    } finally {
+      setIsUpdatingSession(false);
+    }
+  };
+
+  const handleCopySessionId = async () => {
+    if (!stats?.sessionId) {
+      toast.error("No session ID to copy");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(stats.sessionId);
+      toast.success("Session ID copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy session ID:", error);
+      toast.error("Failed to copy session ID");
+    }
+  };
+
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newText.trim() || isLoading) return;
@@ -73,6 +114,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to add entry:", error);
+      toast.error("Failed to add entry");
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +128,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to delete entry:", error);
+      toast.error("Failed to delete entry");
     }
   };
 
@@ -144,32 +187,77 @@ export default function Home() {
           </CardHeader>
         </Card>
 
-        {/* Stats Card */}
-        {stats && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Session Info</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Session ID:</span>
+        {/* Stats Card - Always shows */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Session Info</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Session ID:</span>
+                <div className="flex items-center gap-2 mt-1">
                   <p className="text-gray-600 font-mono break-all">
-                    {stats.sessionId}
+                    {stats?.sessionId || "--"}
                   </p>
-                </div>
-                <div>
-                  <span className="font-medium">Active Entries:</span>
-                  <p className="text-gray-600">{stats.entryCount}</p>
-                </div>
-                <div>
-                  <span className="font-medium">TTL:</span>
-                  <p className="text-gray-600">{stats.ttlSeconds} seconds</p>
+                  {stats?.sessionId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopySessionId}
+                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                      title="Copy session ID"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+
+              <div>
+                <span className="font-medium">Active Entries:</span>
+                <p className="text-gray-600">{stats?.entryCount ?? "--"}</p>
+              </div>
+
+              <div>
+                <span className="font-medium">TTL:</span>
+                <p className="text-gray-600">
+                  {stats?.ttlSeconds ? `${stats.ttlSeconds} seconds` : "--"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Update Session ID Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Update Session ID</CardTitle>
+            <CardDescription>
+              Change your session ID to start fresh or access a different
+              session
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateSession} className="flex gap-2">
+              <Input
+                value={newSessionId}
+                onChange={(e) => setNewSessionId(e.target.value)}
+                placeholder="Enter new session ID..."
+                disabled={isUpdatingSession}
+                className="flex-1"
+              />
+              <Button
+                type="submit"
+                disabled={isUpdatingSession || !newSessionId.trim()}
+                variant="outline"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                {isUpdatingSession ? "Updating..." : "Update"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Add Entry Form */}
         <Card>
