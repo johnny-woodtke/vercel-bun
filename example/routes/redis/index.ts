@@ -48,13 +48,6 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
           try {
             // Upload to R2
-            console.log("S3_SESSION_TOKEN", Bun.env.S3_SESSION_TOKEN);
-            console.log("AWS_SESSION_TOKEN", Bun.env.AWS_SESSION_TOKEN);
-            Bun.env.S3_SESSION_TOKEN = undefined;
-            Bun.env.AWS_SESSION_TOKEN = undefined;
-            console.log("S3_SESSION_TOKEN", Bun.env.S3_SESSION_TOKEN);
-            console.log("AWS_SESSION_TOKEN", Bun.env.AWS_SESSION_TOKEN);
-
             await r2.write(fileName, imageFile, {
               type: imageFile.type,
               acl: "public-read",
