@@ -1,21 +1,14 @@
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 export function Header() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">
+    <header className="w-full bg-card border-b border-border shadow-sm">
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold text-center text-card-foreground">
           Bun Redis Client Demo
-        </CardTitle>
-        <CardDescription className="text-center">
+        </h1>
+        <p className="text-center text-muted-foreground mt-2">
           Session-scoped text entries with custom TTL (10-300 seconds)
-        </CardDescription>
-      </CardHeader>
-    </Card>
+        </p>
+      </div>
+    </header>
   );
 }

@@ -6,14 +6,16 @@ import { Footer } from "@/components/footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <Header />
-        <SessionCard />
-        <AddEntryCard />
-        <EntriesTable />
-        <Footer />
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      <main className="flex-1 py-8 px-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <SessionCard />
+          <AddEntryCard />
+          <EntriesTable />
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

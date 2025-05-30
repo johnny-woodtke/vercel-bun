@@ -1,13 +1,11 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 export function Footer() {
   return (
-    <Card>
-      <CardContent>
-        <div className="text-center text-sm text-gray-500">
+    <footer className="w-full bg-card border-t border-border shadow-sm">
+      <div className="max-w-4xl mx-auto py-6 px-4">
+        <div className="text-center text-sm text-muted-foreground">
           <p>Built with Bun, Elysia, and Next.js. Deployed on Vercel.</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </footer>
   );
 }
