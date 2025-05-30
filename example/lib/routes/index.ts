@@ -4,7 +4,6 @@ import { cacheControl, CacheControl } from "elysiajs-cdn-cache";
 
 import { contentRoutes } from "./content";
 import { redisRoutes } from "./redis";
-import { sessionRoutes } from "./session";
 import { usersRoutes } from "./users";
 
 export const app = new Elysia({ prefix: "/api" })
@@ -15,7 +14,6 @@ export const app = new Elysia({ prefix: "/api" })
     })
   )
 
-  .use(sessionRoutes)
   .use(redisRoutes)
   .use(usersRoutes)
   .use(contentRoutes)

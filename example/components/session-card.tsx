@@ -1,138 +1,143 @@
 "use client";
 
-import { Copy, Edit } from "lucide-react";
-import { useState } from "react";
+import { debounce } from "lodash";
+import { Copy, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useRedisStats } from "@/hooks/use-redis-stats";
-import { useSession } from "@/hooks/use-session";
+import { useRedisEntries } from "@/hooks/use-redis-entries";
+import { useSessionCookie } from "@/hooks/use-session-cookie";
 
 export function SessionCard() {
-  const [newSessionId, setNewSessionId] = useState("");
-  const [isEditingSession, setIsEditingSession] = useState(false);
+  // State for the session ID
+  const [sessionIdState, setSessionIdState] = useState("");
 
-  const { stats } = useRedisStats();
-  const { updateSession, isUpdatingSession } = useSession();
+  // Session cookie management utils
+  const { getSessionIdCookie, setSessionIdCookie } = useSessionCookie();
 
-  const handleUpdateSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSessionId.trim()) return;
+  // Redis entries management utils (for updating the entries table on session ID changes)
+  const { refresh } = useRedisEntries();
 
-    try {
-      await updateSession(newSessionId.trim());
-      setNewSessionId("");
-      setIsEditingSession(false);
-    } catch (error) {
-      // Error is already handled in the hook
+  // Set the session ID state and cookie
+  function setSessionIdStateAndCookie(value: string) {
+    setSessionIdState(value);
+    setSessionIdCookie(value);
+  }
+
+  // Initialize sessionId from cookie on component mount
+  useEffect(() => {
+    // Get the session ID from the cookie
+    const sessionIdCookie = getSessionIdCookie();
+
+    // If the session ID exists, set the state and cookie
+    if (sessionIdCookie) {
+      setSessionIdStateAndCookie(sessionIdCookie.toString());
+      return;
     }
-  };
 
-  const handleCopySessionId = async () => {
-    if (!stats?.sessionId) {
+    // Generate a new session ID and set the state and cookie
+    setSessionIdStateAndCookie(crypto.randomUUID());
+  }, []);
+
+  // Create a debounced version of the refresh function
+  const refreshEntries = useCallback(
+    debounce(() => {
+      refresh();
+    }, 500),
+    []
+  );
+
+  // Effect to refresh Redis entries when session ID changes
+  useEffect(() => {
+    // Skip the initial render or when sessionIdState is empty
+    if (!sessionIdState) return;
+
+    // Call the debounced refresh function
+    refreshEntries();
+
+    // Cleanup function to cancel pending debounced calls
+    return () => {
+      refreshEntries.cancel();
+    };
+  }, [sessionIdState, refreshEntries]);
+
+  // Handle input change
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSessionIdStateAndCookie(e.target.value);
+  }
+
+  // Handle input blur
+  function handleInputBlur() {
+    // Trim the value when user finishes editing
+    const trimmedValue = sessionIdState.trim();
+    if (trimmedValue !== sessionIdState) {
+      setSessionIdStateAndCookie(trimmedValue);
+    }
+  }
+
+  // Handle refresh
+  function handleRefresh() {
+    setSessionIdStateAndCookie(crypto.randomUUID());
+    toast.success("Session ID refreshed!");
+  }
+
+  // Handle copy
+  async function handleCopy() {
+    const currentSessionId = sessionIdState;
+    if (!currentSessionId) {
       toast.error("No session ID to copy");
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(stats.sessionId);
+      await navigator.clipboard.writeText(currentSessionId);
       toast.success("Session ID copied to clipboard!");
     } catch (error) {
       console.error("Failed to copy session ID:", error);
       toast.error("Failed to copy session ID");
     }
-  };
+  }
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">
-          {isEditingSession ? "Update Session ID" : "Session Info"}
-        </CardTitle>
-        {!isEditingSession && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditingSession(true)}
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Update
-          </Button>
-        )}
+      <CardHeader>
+        <CardTitle className="text-lg">Session</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Manage your unique session identifier. Use the refresh button to
+          generate a new ID or copy the current one to share.
+        </p>
       </CardHeader>
       <CardContent>
-        {isEditingSession ? (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Change your session ID to start fresh or access a different
-              session
-            </p>
-            <form onSubmit={handleUpdateSession} className="flex gap-2">
-              <Input
-                value={newSessionId}
-                onChange={(e) => setNewSessionId(e.target.value)}
-                placeholder="Enter new session ID..."
-                disabled={isUpdatingSession}
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                disabled={isUpdatingSession || !newSessionId.trim()}
-                variant="outline"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                {isUpdatingSession ? "Updating..." : "Update"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setIsEditingSession(false);
-                  setNewSessionId("");
-                }}
-                disabled={isUpdatingSession}
-              >
-                Cancel
-              </Button>
-            </form>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
-            <div className="md:col-span-3">
-              <span className="font-medium">Session ID:</span>
-              <div className="flex flex-1 items-center gap-2 mt-1">
-                <p className="text-gray-600 font-mono break-all">
-                  {stats?.sessionId || "--"}
-                </p>
-                {stats?.sessionId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCopySessionId}
-                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                    title="Copy session ID"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className="font-medium">Active Entries:</span>
-              <p className=" text-gray-600">{stats?.entryCount ?? "--"}</p>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className="font-medium">TTL:</span>
-              <p className=" text-gray-600">
-                {stats?.ttlSeconds ? `${stats.ttlSeconds} seconds` : "--"}
-              </p>
-            </div>
-          </div>
-        )}
+        <form className="flex gap-2 items-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="flex-shrink-0"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+          <Input
+            value={sessionIdState}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            placeholder="Session ID..."
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="flex-shrink-0"
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

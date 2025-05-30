@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { eden } from "@/lib/eden";
+import { useCallback } from "react";
 
 export function useRedisEntries() {
   const queryClient = useQueryClient();
@@ -57,10 +58,10 @@ export function useRedisEntries() {
     },
   });
 
-  const refresh = () => {
+  function refresh() {
     queryClient.invalidateQueries({ queryKey: ["entries"] });
     queryClient.invalidateQueries({ queryKey: ["stats"] });
-  };
+  }
 
   return {
     entries: entriesQuery.data || [],

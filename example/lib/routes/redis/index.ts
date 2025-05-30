@@ -1,14 +1,19 @@
 import { Elysia, t } from "elysia";
 
 import { SessionRedisService } from "@/lib/redis";
-import { sessionId } from "@/lib/session";
+import { COOKIE_NAME } from "@/hooks/use-session-cookie";
 
 export const redisRoutes = new Elysia({ prefix: "/redis" })
-  .use(sessionId())
 
   .post(
     "/entries",
-    async ({ body, sessionId, set }) => {
+    async ({
+      body,
+      cookie: {
+        [COOKIE_NAME]: { value: sessionId },
+      },
+      set,
+    }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
 
@@ -31,6 +36,9 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       body: t.Object({
         text: t.String({ minLength: 1, maxLength: 1000 }),
       }),
+      cookie: t.Object({
+        [COOKIE_NAME]: t.String(),
+      }),
       response: t.Union([
         t.Object({
           success: t.Literal(true),
@@ -52,7 +60,12 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .get(
     "/entries",
-    async ({ sessionId, set }) => {
+    async ({
+      cookie: {
+        [COOKIE_NAME]: { value: sessionId },
+      },
+      set,
+    }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
 
@@ -72,6 +85,9 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       }
     },
     {
+      cookie: t.Object({
+        [COOKIE_NAME]: t.String(),
+      }),
       response: t.Union([
         t.Object({
           success: t.Literal(true),
@@ -96,7 +112,13 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .delete(
     "/entries/:id",
-    async ({ params, sessionId, set }) => {
+    async ({
+      params,
+      cookie: {
+        [COOKIE_NAME]: { value: sessionId },
+      },
+      set,
+    }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
 
@@ -126,51 +148,13 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       params: t.Object({
         id: t.String(),
       }),
+      cookie: t.Object({
+        [COOKIE_NAME]: t.String(),
+      }),
       response: t.Union([
         t.Object({
           success: t.Literal(true),
           message: t.String(),
-        }),
-        t.Object({
-          success: t.Literal(false),
-          error: t.String(),
-        }),
-      ]),
-    }
-  )
-
-  .get(
-    "/stats",
-    async ({ sessionId }) => {
-      try {
-        const redisService = new SessionRedisService(sessionId);
-
-        const count = await redisService.getEntryCount();
-
-        return {
-          success: true,
-          data: {
-            sessionId,
-            entryCount: count,
-            ttlSeconds: 120,
-          },
-        };
-      } catch (error) {
-        return {
-          success: false,
-          error: "Failed to fetch stats",
-        };
-      }
-    },
-    {
-      response: t.Union([
-        t.Object({
-          success: t.Literal(true),
-          data: t.Object({
-            sessionId: t.String(),
-            entryCount: t.Number(),
-            ttlSeconds: t.Number(),
-          }),
         }),
         t.Object({
           success: t.Literal(false),
