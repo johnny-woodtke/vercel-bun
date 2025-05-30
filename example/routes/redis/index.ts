@@ -48,10 +48,13 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
           try {
             // Upload to R2
+            console.log("S3_SESSION_TOKEN", Bun.env.S3_SESSION_TOKEN);
+            Bun.env.S3_SESSION_TOKEN = "";
+            console.log("S3_SESSION_TOKEN", Bun.env.S3_SESSION_TOKEN);
+
             await r2.write(fileName, imageFile, {
               type: imageFile.type,
               acl: "public-read",
-              sessionToken: "",
             });
 
             // Construct the public URL
