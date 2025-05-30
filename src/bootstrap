@@ -10,17 +10,11 @@ BUN_BINARY="/var/task/bin/bun"
 }
 
 # Prepare writable directories for Bun
-export BUN_TMPDIR="/tmp"
-export BUN_INSTALL_CACHE_DIR="/tmp/.bun"
-export BUN_INSTALL_GLOBAL_DIR="/tmp/.bun"
-export BUN_CONFIG_DIR="/tmp/.bun"
 export XDG_CACHE_HOME="/tmp/.cache"
 export HOME="/tmp"
 
 # Disable unnecessary features
-export BUN_DISABLE_ANALYTICS=1
-export BUN_DISABLE_UPGRADE_PROMPT=1
-export BUN_NO_UPDATE_NOTIFIER=1
+export DO_NOT_TRACK=1
 
 # Remove env variables to enable R2 authentication
 export AWS_SESSION_TOKEN=""
