@@ -82,8 +82,8 @@ export function EntriesTable() {
                   const timeRemaining = getTimeRemaining(entry.expiresAt);
                   return (
                     <TableRow key={entry.id}>
-                      <TableCell className="font-medium w-full">
-                        <div className="flex flex-col items-start space-y-2">
+                      <TableCell className="font-medium w-full pl-4 py-4">
+                        <div className="flex flex-col items-start space-y-4">
                           {entry.imageUrl && (
                             <div className="relative w-full flex justify-center items-center">
                               <Image
