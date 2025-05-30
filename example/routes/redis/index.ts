@@ -51,7 +51,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
             await r2.write(fileName, imageFile, {
               type: imageFile.type,
               acl: "public-read",
-              sessionToken: undefined,
+              sessionToken: "",
             });
 
             // Construct the public URL
