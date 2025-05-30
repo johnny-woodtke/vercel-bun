@@ -1,7 +1,11 @@
 import { Elysia, t } from "elysia";
 
-import { SessionRedisService } from "@/lib/redis";
 import { COOKIE_NAME } from "@/hooks/use-session-cookie";
+import { SessionRedisService } from "@/lib/redis";
+import { getImageUrl, r2 } from "@/lib/r2";
+
+const MIN_TTL = 10;
+const MAX_TTL = 300;
 
 export const redisRoutes = new Elysia({ prefix: "/redis" })
 
@@ -16,8 +20,52 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
+        let imageUrl: string | undefined;
 
-        const entry = await redisService.addEntry(body.text, body.ttl);
+        // Convert ttl to number if it's a string
+        let ttl = body.ttl;
+        if (typeof ttl === "string") {
+          const parsedTtl = parseInt(ttl, 10);
+          if (
+            Number.isNaN(parsedTtl) ||
+            parsedTtl < MIN_TTL ||
+            parsedTtl > MAX_TTL
+          ) {
+            set.status = 400;
+            return {
+              success: false,
+              error: "TTL must be a number between 10 and 300",
+            };
+          }
+          ttl = parsedTtl;
+        }
+
+        // Handle image upload if present
+        if (body.image) {
+          const imageFile = body.image;
+          const fileExtension = imageFile.name.split(".").pop() || "jpg";
+          const fileName = `images/${sessionId}/${crypto.randomUUID()}.${fileExtension}`;
+
+          try {
+            // Upload to R2
+            await r2.write(fileName, imageFile, {
+              type: imageFile.type,
+              acl: "public-read",
+            });
+
+            // Construct the public URL
+            imageUrl = getImageUrl(fileName);
+          } catch (uploadError) {
+            console.error("Failed to upload image:", uploadError);
+            set.status = 500;
+            return {
+              success: false,
+              error: "Failed to upload image",
+            };
+          }
+        }
+
+        const entry = await redisService.addEntry(body.text, ttl, imageUrl);
 
         set.status = 201;
         return {
@@ -25,6 +73,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
           data: entry,
         };
       } catch (error) {
+        console.error("Failed to add entry:", error);
         set.status = 500;
         return {
           success: false,
@@ -35,7 +84,13 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     {
       body: t.Object({
         text: t.String({ minLength: 1, maxLength: 1000 }),
-        ttl: t.Optional(t.Number({ minimum: 10, maximum: 300 })),
+        ttl: t.Optional(
+          t.Union([
+            t.Number({ minimum: MIN_TTL, maximum: MAX_TTL }),
+            t.String({}),
+          ])
+        ),
+        image: t.Optional(t.File()),
       }),
       cookie: t.Object({
         [COOKIE_NAME]: t.String(),
@@ -49,6 +104,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
             createdAt: t.String(),
             expiresAt: t.String(),
             ttl: t.Number(),
+            imageUrl: t.Optional(t.String()),
           }),
         }),
         t.Object({
@@ -99,6 +155,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
               createdAt: t.String(),
               expiresAt: t.String(),
               ttl: t.Number(),
+              imageUrl: t.Optional(t.String()),
             })
           ),
           count: t.Number(),

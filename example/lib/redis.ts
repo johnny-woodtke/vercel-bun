@@ -8,6 +8,7 @@ export interface RedisEntry {
   createdAt: string;
   expiresAt: string;
   ttl: number;
+  imageUrl?: string;
 }
 
 export class SessionRedisService {
@@ -25,7 +26,8 @@ export class SessionRedisService {
 
   async addEntry(
     text: string,
-    ttl: number = SessionRedisService.TTL_SECONDS
+    ttl: number = SessionRedisService.TTL_SECONDS,
+    imageUrl?: string
   ): Promise<RedisEntry> {
     const id = crypto.randomUUID();
     const now = new Date();
@@ -37,6 +39,7 @@ export class SessionRedisService {
       createdAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
       ttl,
+      ...(imageUrl && { imageUrl }),
     };
 
     const entryKey = this.getSessionKey(id);

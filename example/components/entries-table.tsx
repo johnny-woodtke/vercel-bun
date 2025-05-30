@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw, Trash2 } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,11 +27,7 @@ export function EntriesTable() {
     refresh,
   } = useRedisEntries();
 
-  const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString();
-  };
-
-  const getTimeRemaining = (expiresAt: string) => {
+  function getTimeRemaining(expiresAt: string) {
     const now = new Date();
     const expires = new Date(expiresAt);
     const remaining = Math.max(
@@ -38,19 +35,19 @@ export function EntriesTable() {
       Math.floor((expires.getTime() - now.getTime()) / 1000)
     );
     return remaining;
-  };
+  }
 
-  const handleDeleteEntry = async (id: string) => {
+  async function handleDeleteEntry(id: string) {
     try {
       await deleteEntry(id);
     } catch (error) {
       // Error is already handled in the hook
     }
-  };
+  }
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-lg">Active Entries</CardTitle>
         <Button
           variant="outline"
@@ -80,30 +77,31 @@ export function EntriesTable() {
         ) : (
           <div className="rounded-md border">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Text</TableHead>
-                  <TableHead className="w-32">Created</TableHead>
-                  <TableHead className="w-32">Expires</TableHead>
-                  <TableHead className="w-24">TTL</TableHead>
-                  <TableHead className="w-16">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
               <TableBody>
                 {entries.map((entry: RedisEntry) => {
                   const timeRemaining = getTimeRemaining(entry.expiresAt);
                   return (
                     <TableRow key={entry.id}>
-                      <TableCell className="font-medium max-w-md">
-                        <div className="truncate">{entry.text}</div>
+                      <TableCell className="font-medium w-full">
+                        <div className="flex flex-col items-start space-y-2">
+                          {entry.imageUrl && (
+                            <div className="relative w-full flex justify-center items-center">
+                              <Image
+                                src={entry.imageUrl}
+                                alt="Entry image"
+                                width={0}
+                                height={0}
+                                className="w-[80%] h-auto object-contain rounded-md"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
+                            </div>
+                          )}
+                          <div className="max-w-xs">
+                            <div className="break-words">{entry.text}</div>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {formatTime(entry.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {formatTime(entry.expiresAt)}
-                      </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm w-16">
                         <span
                           className={
                             timeRemaining < 30
@@ -114,7 +112,7 @@ export function EntriesTable() {
                           {timeRemaining}s
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-16">
                         <Button
                           variant="ghost"
                           size="sm"

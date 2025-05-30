@@ -58,10 +58,9 @@ The `/api` route demonstrates a wide range of serverless function capabilities:
 
 ### Redis Demo Endpoints
 
-- `POST /api/redis/entries` - Add a new text entry to the current session
+- `POST /api/redis/entries` - Add a new entry to the current session
 - `GET /api/redis/entries` - Retrieve all entries for the current session
 - `DELETE /api/redis/entries/:id` - Delete a specific entry
-- `GET /api/redis/stats` - Get session statistics (ID, entry count, TTL info)
 
 ### Content Type Examples
 
@@ -132,9 +131,6 @@ curl -X POST http://localhost:3000/api/redis/entries \
 
 # Redis demo - Get entries
 curl http://localhost:3000/api/redis/entries
-
-# Redis demo - Get stats
-curl http://localhost:3000/api/redis/stats
 ```
 
 ## Deployment on Vercel

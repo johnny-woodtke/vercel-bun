@@ -19,20 +19,31 @@ export function useRedisEntries() {
   });
 
   const addEntryMutation = useMutation({
-    mutationFn: async ({ text, ttl }: { text: string; ttl?: number }) => {
+    mutationFn: async ({
+      text,
+      ttl,
+      image,
+    }: {
+      text: string;
+      ttl?: number;
+      image?: File | null;
+    }) => {
       const response = await eden.api.redis.entries.post({
         text,
-        ...(ttl && { ttl }),
+        ttl,
+        image: image ?? undefined,
       });
-      if (!response.data?.success) {
-        throw new Error("Failed to add entry");
+
+      const data = response.data;
+      if (!data?.success) {
+        throw new Error(data?.error || "Failed to add entry");
       }
-      return response.data;
+
+      return data;
     },
     onSuccess: () => {
       // Invalidate and refetch both queries
       queryClient.invalidateQueries({ queryKey: ["entries"] });
-      queryClient.invalidateQueries({ queryKey: ["stats"] });
       toast.success("Entry added successfully!");
     },
     onError: (error) => {
@@ -52,7 +63,6 @@ export function useRedisEntries() {
     onSuccess: () => {
       // Invalidate and refetch both queries
       queryClient.invalidateQueries({ queryKey: ["entries"] });
-      queryClient.invalidateQueries({ queryKey: ["stats"] });
       toast.success("Entry deleted successfully!");
     },
     onError: (error) => {
@@ -63,7 +73,6 @@ export function useRedisEntries() {
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["entries"] });
-    queryClient.invalidateQueries({ queryKey: ["stats"] });
   }
 
   return {
