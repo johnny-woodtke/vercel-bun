@@ -11,6 +11,8 @@ export function useSessionCookie() {
   // Set the cookie value
   function setSessionIdCookie(value: string) {
     setCookie(SESSION_ID_COOKIE_NAME, value, {
+      httpOnly: true,
+      sameSite: "none",
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // 1 day expiry
     });
   }
