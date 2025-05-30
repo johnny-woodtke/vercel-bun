@@ -149,7 +149,7 @@ export function AddEntryCard() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image">Image (Optional)</Label>
+            <Label htmlFor="image">Image (optional)</Label>
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                 dragActive
@@ -186,18 +186,18 @@ export function AddEntryCard() {
                 <div className="space-y-2">
                   <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Drop an image here, or{" "}
                       <button
                         type="button"
-                        className="text-blue-600 hover:text-blue-700"
+                        className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isAddingEntry}
                       >
                         browse
                       </button>
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       JPEG, PNG, GIF, WebP • Max 5MB
                     </p>
                   </div>
@@ -215,7 +215,7 @@ export function AddEntryCard() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ttl">TTL (Time to Live in seconds)</Label>
+            <Label htmlFor="ttl">Time to live (seconds)</Label>
             <Input
               id="ttl"
               type="number"
@@ -225,13 +225,13 @@ export function AddEntryCard() {
               min={10}
               max={300}
               disabled={isAddingEntry}
-              className={ttlError ? "border-red-500" : ""}
+              className={ttlError ? "border-destructive" : ""}
             />
             {ttlError ? (
-              <p className="text-sm text-red-600">{ttlError}</p>
+              <p className="text-sm text-destructive">{ttlError}</p>
             ) : (
-              <p className="text-sm text-gray-500">
-                Enter a value between 10 and 300 seconds (5 minutes)
+              <p className="text-sm text-muted-foreground">
+                Enter a value between 10 and 300 seconds
               </p>
             )}
           </div>

@@ -63,15 +63,15 @@ export function EntriesTable() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             Loading entries...
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-red-500">
+          <div className="text-center py-8 text-destructive">
             Error loading entries: {error.message}
           </div>
         ) : entries.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             No entries found. Add some text above to get started!
           </div>
         ) : (
@@ -91,7 +91,7 @@ export function EntriesTable() {
                                 alt="Entry image"
                                 width={0}
                                 height={0}
-                                className="w-[80%] h-auto object-contain rounded-md"
+                                className="w-[80%] h-auto object-contain rounded-xl"
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               />
                             </div>
@@ -105,7 +105,7 @@ export function EntriesTable() {
                         <span
                           className={
                             timeRemaining < 30
-                              ? "text-red-600 font-medium"
+                              ? "text-destructive font-medium"
                               : "text-green-600"
                           }
                         >
@@ -118,7 +118,7 @@ export function EntriesTable() {
                           size="sm"
                           onClick={() => handleDeleteEntry(entry.id)}
                           disabled={isDeletingEntry}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
