@@ -23,19 +23,20 @@ export class SessionRedisService {
     return `session:${this.sessionId}:index`;
   }
 
-  async addEntry(text: string): Promise<RedisEntry> {
+  async addEntry(
+    text: string,
+    ttl: number = SessionRedisService.TTL_SECONDS
+  ): Promise<RedisEntry> {
     const id = crypto.randomUUID();
     const now = new Date();
-    const expiresAt = new Date(
-      now.getTime() + SessionRedisService.TTL_SECONDS * 1000
-    );
+    const expiresAt = new Date(now.getTime() + ttl * 1000);
 
     const entry: RedisEntry = {
       id,
       text,
       createdAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
-      ttl: SessionRedisService.TTL_SECONDS,
+      ttl,
     };
 
     const entryKey = this.getSessionKey(id);
@@ -43,11 +44,11 @@ export class SessionRedisService {
 
     // Store the entry and then set TTL
     await redis.set(entryKey, JSON.stringify(entry));
-    await redis.expire(entryKey, SessionRedisService.TTL_SECONDS);
+    await redis.expire(entryKey, ttl);
 
     // Add to session index (also with TTL)
     await redis.sadd(indexKey, id);
-    await redis.expire(indexKey, SessionRedisService.TTL_SECONDS + 10); // Index expires slightly later
+    await redis.expire(indexKey, ttl + 10); // Index expires slightly later
 
     return entry;
   }

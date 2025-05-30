@@ -13,7 +13,7 @@ export function Header() {
           Bun Redis Client Demo
         </CardTitle>
         <CardDescription className="text-center">
-          Session-scoped text entries with 120-second TTL
+          Session-scoped text entries with custom TTL (10-300 seconds)
         </CardDescription>
       </CardHeader>
     </Card>

@@ -17,7 +17,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       try {
         const redisService = new SessionRedisService(sessionId);
 
-        const entry = await redisService.addEntry(body.text);
+        const entry = await redisService.addEntry(body.text, body.ttl);
 
         set.status = 201;
         return {
@@ -35,6 +35,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     {
       body: t.Object({
         text: t.String({ minLength: 1, maxLength: 1000 }),
+        ttl: t.Optional(t.Number({ minimum: 10, maximum: 300 })),
       }),
       cookie: t.Object({
         [COOKIE_NAME]: t.String(),

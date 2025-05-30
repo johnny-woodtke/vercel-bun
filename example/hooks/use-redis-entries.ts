@@ -19,8 +19,11 @@ export function useRedisEntries() {
   });
 
   const addEntryMutation = useMutation({
-    mutationFn: async (text: string) => {
-      const response = await eden.api.redis.entries.post({ text });
+    mutationFn: async ({ text, ttl }: { text: string; ttl?: number }) => {
+      const response = await eden.api.redis.entries.post({
+        text,
+        ...(ttl && { ttl }),
+      });
       if (!response.data?.success) {
         throw new Error("Failed to add entry");
       }

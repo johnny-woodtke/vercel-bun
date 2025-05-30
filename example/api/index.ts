@@ -1,4 +1,4 @@
-import { app } from "@/lib/routes";
+import { app } from "@/routes";
 
 if (Bun.env.NODE_ENV !== "production") {
   app.listen({ port: Bun.env.NEXT_PUBLIC_API_PORT || 3000 });
