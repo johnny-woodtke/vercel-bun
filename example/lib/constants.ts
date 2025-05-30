@@ -1,1 +1,1 @@
-export const SESSION_ID_COOKIE_NAME = "sessionId";
+export const SESSION_ID_PARAM_NAME = "sessionId";

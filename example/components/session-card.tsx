@@ -9,37 +9,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
-import { useSessionCookie } from "@/hooks/use-session-cookie";
+import { useSessionParam } from "@/hooks/use-session-param";
 
 export function SessionCard() {
   // State for the session ID
   const [sessionIdState, setSessionIdState] = useState("");
 
-  // Session cookie management utils
-  const { getSessionIdCookie, setSessionIdCookie } = useSessionCookie();
+  // Session parameter management utils
+  const { getSessionIdParam, setSessionIdParam } = useSessionParam();
 
   // Redis entries management utils (for updating the entries table on session ID changes)
   const { refresh } = useRedisEntries();
 
-  // Set the session ID state and cookie
-  function setSessionIdStateAndCookie(value: string) {
+  // Set the session ID state and query parameter
+  function setSessionIdStateAndParam(value: string) {
     setSessionIdState(value);
-    setSessionIdCookie(value);
+    setSessionIdParam(value);
   }
 
-  // Initialize sessionId from cookie on component mount
+  // Initialize sessionId from query parameter on component mount
   useEffect(() => {
-    // Get the session ID from the cookie
-    const sessionIdCookie = getSessionIdCookie();
+    // Get the session ID from the query parameter
+    const sessionIdParam = getSessionIdParam();
 
-    // If the session ID exists, set the state and cookie
-    if (sessionIdCookie) {
-      setSessionIdStateAndCookie(sessionIdCookie.toString());
+    // If the session ID exists, set the state
+    if (sessionIdParam) {
+      setSessionIdState(sessionIdParam);
       return;
     }
 
-    // Generate a new session ID and set the state and cookie
-    setSessionIdStateAndCookie(crypto.randomUUID());
+    // Generate a new session ID and set the state and query parameter
+    const newSessionId = crypto.randomUUID();
+    setSessionIdStateAndParam(newSessionId);
   }, []);
 
   // Create a debounced version of the refresh function
@@ -66,7 +67,7 @@ export function SessionCard() {
 
   // Handle input change
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSessionIdStateAndCookie(e.target.value);
+    setSessionIdStateAndParam(e.target.value);
   }
 
   // Handle input blur
@@ -74,13 +75,13 @@ export function SessionCard() {
     // Trim the value when user finishes editing
     const trimmedValue = sessionIdState.trim();
     if (trimmedValue !== sessionIdState) {
-      setSessionIdStateAndCookie(trimmedValue);
+      setSessionIdStateAndParam(trimmedValue);
     }
   }
 
   // Handle refresh
   function handleRefresh() {
-    setSessionIdStateAndCookie(crypto.randomUUID());
+    setSessionIdStateAndParam(crypto.randomUUID());
     toast.success("Session ID refreshed!");
   }
 

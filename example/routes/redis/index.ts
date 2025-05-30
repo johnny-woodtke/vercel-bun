@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 
-import { SESSION_ID_COOKIE_NAME } from "@/lib/constants";
+import { SESSION_ID_PARAM_NAME } from "@/lib/constants";
 import { getImageUrl, r2 } from "@/lib/r2";
 import { SessionRedisService } from "@/lib/redis";
 
@@ -11,13 +11,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .post(
     "/entries",
-    async ({
-      body,
-      cookie: {
-        [SESSION_ID_COOKIE_NAME]: { value: sessionId },
-      },
-      set,
-    }) => {
+    async ({ body, query: { [SESSION_ID_PARAM_NAME]: sessionId }, set }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
         let imageUrl: string | undefined;
@@ -92,8 +86,8 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
         ),
         image: t.Optional(t.File()),
       }),
-      cookie: t.Object({
-        [SESSION_ID_COOKIE_NAME]: t.String(),
+      query: t.Object({
+        [SESSION_ID_PARAM_NAME]: t.String(),
       }),
       response: t.Union([
         t.Object({
@@ -117,12 +111,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .get(
     "/entries",
-    async ({
-      cookie: {
-        [SESSION_ID_COOKIE_NAME]: { value: sessionId },
-      },
-      set,
-    }) => {
+    async ({ query: { [SESSION_ID_PARAM_NAME]: sessionId }, set }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
 
@@ -142,8 +131,8 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       }
     },
     {
-      cookie: t.Object({
-        [SESSION_ID_COOKIE_NAME]: t.String(),
+      query: t.Object({
+        [SESSION_ID_PARAM_NAME]: t.String(),
       }),
       response: t.Union([
         t.Object({
@@ -170,13 +159,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .delete(
     "/entries/:id",
-    async ({
-      params,
-      cookie: {
-        [SESSION_ID_COOKIE_NAME]: { value: sessionId },
-      },
-      set,
-    }) => {
+    async ({ params, query: { [SESSION_ID_PARAM_NAME]: sessionId }, set }) => {
       try {
         const redisService = new SessionRedisService(sessionId);
 
@@ -206,8 +189,8 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       params: t.Object({
         id: t.String(),
       }),
-      cookie: t.Object({
-        [SESSION_ID_COOKIE_NAME]: t.String(),
+      query: t.Object({
+        [SESSION_ID_PARAM_NAME]: t.String(),
       }),
       response: t.Union([
         t.Object({
