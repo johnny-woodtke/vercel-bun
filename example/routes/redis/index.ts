@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
 
-import { COOKIE_NAME } from "@/hooks/use-session-cookie";
-import { SessionRedisService } from "@/lib/redis";
+import { SESSION_ID_COOKIE_NAME } from "@/lib/constants";
 import { getImageUrl, r2 } from "@/lib/r2";
+import { SessionRedisService } from "@/lib/redis";
 
 const MIN_TTL = 10;
 const MAX_TTL = 300;
@@ -14,7 +14,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     async ({
       body,
       cookie: {
-        [COOKIE_NAME]: { value: sessionId },
+        [SESSION_ID_COOKIE_NAME]: { value: sessionId },
       },
       set,
     }) => {
@@ -93,7 +93,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
         image: t.Optional(t.File()),
       }),
       cookie: t.Object({
-        [COOKIE_NAME]: t.String(),
+        [SESSION_ID_COOKIE_NAME]: t.String(),
       }),
       response: t.Union([
         t.Object({
@@ -119,7 +119,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     "/entries",
     async ({
       cookie: {
-        [COOKIE_NAME]: { value: sessionId },
+        [SESSION_ID_COOKIE_NAME]: { value: sessionId },
       },
       set,
     }) => {
@@ -143,7 +143,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     },
     {
       cookie: t.Object({
-        [COOKIE_NAME]: t.String(),
+        [SESSION_ID_COOKIE_NAME]: t.String(),
       }),
       response: t.Union([
         t.Object({
@@ -173,7 +173,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     async ({
       params,
       cookie: {
-        [COOKIE_NAME]: { value: sessionId },
+        [SESSION_ID_COOKIE_NAME]: { value: sessionId },
       },
       set,
     }) => {
@@ -207,7 +207,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
         id: t.String(),
       }),
       cookie: t.Object({
-        [COOKIE_NAME]: t.String(),
+        [SESSION_ID_COOKIE_NAME]: t.String(),
       }),
       response: t.Union([
         t.Object({
