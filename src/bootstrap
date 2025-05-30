@@ -22,5 +22,9 @@ export BUN_DISABLE_ANALYTICS=1
 export BUN_DISABLE_UPGRADE_PROMPT=1
 export BUN_NO_UPDATE_NOTIFIER=1
 
+# Remove env variables to enable R2 authentication
+export AWS_SESSION_TOKEN=""
+export S3_SESSION_TOKEN=""
+
 # Execute Bun runtime with optimized flags
 exec "$BUN_BINARY" --cwd $LAMBDA_TASK_ROOT /var/task/runtime/index.ts
