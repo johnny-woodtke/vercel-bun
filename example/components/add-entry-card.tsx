@@ -133,6 +133,11 @@ export function AddEntryCard() {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Add New Entry</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Store temporary text and image entries in Redis with automatic
+          expiration. Perfect for sharing quick notes, snippets, or images that
+          don't need permanent storage.
+        </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleAddEntry} className="space-y-4">

@@ -56,28 +56,9 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
   return (
     <Card className="relative overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/40 transition-colors">
       <CardContent>
-        <div className="flex justify-between items-start gap-4">
-          <div className="flex-1 space-y-3">
-            {entry.imageUrl && (
-              <div className="w-full max-w-sm">
-                <AspectRatio ratio={16 / 9}>
-                  <Image
-                    src={entry.imageUrl}
-                    alt="Entry image"
-                    fill
-                    className="rounded-lg object-cover shadow-md"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                </AspectRatio>
-              </div>
-            )}
-
-            <p className="text-sm text-foreground leading-relaxed break-words">
-              {entry.text}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col space-y-4">
+          {/* Time remaining and delete button row */}
+          <div className="flex justify-end gap-2 shrink-0">
             <Badge
               variant={isExpiringSoon ? "destructive" : "secondary"}
               className="text-xs"
@@ -96,6 +77,26 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
+
+          {/* Image */}
+          {entry.imageUrl && (
+            <div className="w-full max-w-sm">
+              <AspectRatio ratio={16 / 9}>
+                <Image
+                  src={entry.imageUrl}
+                  alt="Entry image"
+                  fill
+                  className="rounded-lg object-cover shadow-md"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              </AspectRatio>
+            </div>
+          )}
+
+          {/* Text */}
+          <p className="text-sm text-foreground leading-relaxed break-words">
+            {entry.text}
+          </p>
         </div>
       </CardContent>
     </Card>
