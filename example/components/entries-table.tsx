@@ -10,7 +10,6 @@ import { useRedisEntries } from "@/hooks/use-redis-entries";
 export function EntriesTable() {
   const {
     entries,
-    isLoading,
     isFetching,
     error,
     deleteEntry,
@@ -46,11 +45,7 @@ export function EntriesTable() {
       </Card>
 
       <div className="mt-4">
-        {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Loading entries...
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="text-center py-8 text-destructive">
             Error loading entries: {error.message}
           </div>

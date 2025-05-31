@@ -1,5 +1,6 @@
 import { RedisClient } from "bun";
 import { Static, t } from "elysia";
+import { v4 as uuidv4 } from "uuid";
 
 export const redis = new RedisClient(Bun.env.REDIS_URL);
 
@@ -32,7 +33,7 @@ export class SessionRedisService {
     ttl: number = SessionRedisService.TTL_SECONDS,
     imageUrl?: string
   ): Promise<RedisEntry> {
-    const id = crypto.randomUUID();
+    const id = uuidv4();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttl * 1000);
 

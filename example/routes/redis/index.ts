@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { v4 as uuidv4 } from "uuid";
 
 import {
   MAX_TEXT_LENGTH,
@@ -50,7 +51,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
         if (body.image) {
           const imageFile = body.image;
           const fileExtension = imageFile.name.split(".").pop() || "jpg";
-          const fileName = `images/${sessionId}/${crypto.randomUUID()}.${fileExtension}`;
+          const fileName = `images/${sessionId}/${uuidv4()}.${fileExtension}`;
 
           try {
             // Upload to R2

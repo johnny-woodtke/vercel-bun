@@ -1,9 +1,9 @@
 "use client";
 
-import { debounce } from "lodash";
 import { Copy, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,75 +18,62 @@ export function SessionCard() {
   // Session parameter management utils
   const { getSessionIdParam, setSessionIdParam } = useSessionParam();
 
-  // Redis entries management utils (for updating the entries table on session ID changes)
-  const { refresh } = useRedisEntries();
-
-  // Set the session ID state and query parameter
-  function setSessionIdStateAndParam(value: string) {
-    setSessionIdState(value);
-    setSessionIdParam(value);
-  }
-
-  // Manage the session ID state and query parameter
+  // Get the session ID param
   const sessionIdParam = getSessionIdParam();
-  useEffect(() => {
-    // If the state and the param are the same, return
-    if (sessionIdState === sessionIdParam) {
-      return;
-    }
 
-    // If the session ID exists, set the state
+  // Populate the state with the session ID param on mount
+  useEffect(() => {
+    // If the session ID param is not empty, set the state
     if (sessionIdParam) {
       setSessionIdState(sessionIdParam);
       return;
     }
 
     // Generate a new session ID and set the state and query parameter
-    const newSessionId = crypto.randomUUID();
-    setSessionIdStateAndParam(newSessionId);
-  }, [sessionIdParam]);
-
-  // Create a debounced version of the refresh function
-  const refreshEntries = useCallback(
-    debounce(() => {
-      refresh();
-    }, 500),
-    []
-  );
-
-  // Effect to refresh Redis entries when session ID changes
-  useEffect(() => {
-    // Skip the initial render or when sessionIdState is empty
-    if (!sessionIdState) return;
-
-    // Call the debounced refresh function
-    refreshEntries();
-
-    // Cleanup function to cancel pending debounced calls
-    return () => {
-      refreshEntries.cancel();
-    };
-  }, [sessionIdState, refreshEntries]);
+    const newSessionId = uuidv4();
+    setSessionIdState(newSessionId);
+    setSessionIdParam(newSessionId);
+  }, []);
 
   // Handle input change
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSessionIdStateAndParam(e.target.value);
+    // Update the state immediately, wait for the blur event to update the URL parameter
+    setSessionIdState(e.target.value);
   }
 
   // Handle input blur
   function handleInputBlur() {
     // Trim the value when user finishes editing
     const trimmedValue = sessionIdState.trim();
-    if (trimmedValue !== sessionIdState) {
-      setSessionIdStateAndParam(trimmedValue);
+
+    // Update the state and URL parameter
+    setSessionIdState(trimmedValue);
+    setSessionIdParam(trimmedValue);
+  }
+
+  // Handle key down on input
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevent form submission
+      (e.target as HTMLInputElement).blur(); // Remove focus from input
     }
   }
 
   // Handle refresh
   function handleRefresh() {
-    setSessionIdStateAndParam(crypto.randomUUID());
+    const uuid = uuidv4();
+    setSessionIdState(uuid);
+    setSessionIdParam(uuid);
     toast.success("Session ID refreshed!");
   }
+
+  // Redis entries management utils (for updating the entries table on session ID changes)
+  const { refresh } = useRedisEntries();
+
+  // Update the entries table when the session ID changes
+  useEffect(() => {
+    refresh();
+  }, [sessionIdParam]);
 
   // Handle copy
   async function handleCopy() {
@@ -132,6 +119,7 @@ export function SessionCard() {
             value={sessionIdState}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
             placeholder="Session ID..."
             className="flex-1 text-sm"
           />
