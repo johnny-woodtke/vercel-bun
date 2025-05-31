@@ -3,6 +3,7 @@ import Elysia, { Static, t } from "elysia";
 import { v4 as uuidv4 } from "uuid";
 
 import { MEMBER_ID_COOKIE_NAME } from "@/lib/constants";
+import { getVercelEnv } from "@/lib/utils";
 
 export const redis = new RedisClient(Bun.env.REDIS_URL);
 
@@ -19,9 +20,21 @@ export type RedisEntry = Static<typeof redisEntrySchema>;
 
 export const memberId = new Elysia().derive({ as: "global" }, ({ cookie }) => {
   if (!cookie[MEMBER_ID_COOKIE_NAME].value) {
+    // Get the environment
+    const env = getVercelEnv();
+
+    // Generate a new member ID
     cookie[MEMBER_ID_COOKIE_NAME].value = uuidv4(); // Generate a new member ID
+
+    // Set cookie options
     cookie[MEMBER_ID_COOKIE_NAME].httpOnly = true; // Prevent JavaScript access
     cookie[MEMBER_ID_COOKIE_NAME].maxAge = 24 * 60 * 60; // 24 hours in seconds
+
+    // Set same site and secure non-local environments
+    if (env) {
+      cookie[MEMBER_ID_COOKIE_NAME].sameSite = "none"; // Allow cross-site requests
+      cookie[MEMBER_ID_COOKIE_NAME].secure = true; // Required for sameSite=none, needs HTTPS
+    }
   }
   return {
     [MEMBER_ID_COOKIE_NAME]: cookie[MEMBER_ID_COOKIE_NAME].value,
