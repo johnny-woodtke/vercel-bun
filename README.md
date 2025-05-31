@@ -23,7 +23,7 @@ vercel-bun is a custom Vercel runtime that enables you to run serverless functio
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.0.50"
+      "runtime": "@godsreveal/vercel-bun@0.1.0"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts
