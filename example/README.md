@@ -12,6 +12,7 @@ This project showcases how to use the [vercel-bun runtime](https://github.com/go
 - 🔧 **Advanced features**: Custom headers, cookies, status codes, content types
 - 🎯 **Type-safe APIs** with built-in validation using Elysia's type system
 - 🔒 **Redis integration** with Bun's native Redis client and session-based data storage
+- 📸 **Image upload to Cloudflare R2** using Bun's native S3 client with automatic file management
 - 🔗 **End-to-end type safety** using `@elysiajs/eden` for seamless client-server communication
 - ⚡ **Real-time UI updates** with `@tanstack/react-query` for efficient data fetching and caching
 
@@ -26,6 +27,17 @@ The example includes a fully functional Redis demo that showcases:
 - **Real-time updates** - UI updates every 5 seconds showing live entry counts and session info
 - **Session management** - Users can switch between sessions or create new ones
 - **CRUD operations** - Add, view, and delete entries with instant feedback
+
+### 📸 Image Upload Demo
+
+A complete image upload system demonstrating:
+
+- **Drag & drop file upload** with visual feedback and progress indicators
+- **Cloudflare R2 storage** using Bun's native S3-compatible client
+- **Automatic file management** with unique naming and metadata storage
+- **Image preview and gallery** with real-time updates
+- **File validation** with size limits and type checking
+- **Optimistic UI updates** with error handling and rollback
 
 ### 🔗 Type-Safe API Communication
 
@@ -83,6 +95,8 @@ bun run --bun dev:next & bun run --bun dev:api
 
 ## Environment Setup
 
+### Redis Configuration
+
 To run the Redis demo, you'll need a Redis instance. Add your Redis connection URL to your environment:
 
 ```bash
@@ -101,6 +115,28 @@ docker run -d -p 6379:6379 redis:alpine
 # Or using Bun (if you have Redis installed locally)
 redis-server
 ```
+
+### Cloudflare R2 Configuration
+
+To use the image upload feature, you'll need a Cloudflare R2 bucket. Add the following environment variables:
+
+```bash
+# .env.local
+NEXT_PUBLIC_R2_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
+NEXT_PUBLIC_R2_ACCESS_KEY=your_access_key_id
+R2_SECRET_ACCESS_KEY=your_secret_access_key
+NEXT_PUBLIC_R2_BUCKET=your-bucket-name
+NEXT_PUBLIC_R2_HOST=your-custom-domain.com
+# or use the default R2.dev URL:
+# NEXT_PUBLIC_R2_HOST=pub-YOUR_HASH.r2.dev
+```
+
+To set up Cloudflare R2:
+
+1. **Create an R2 bucket** in your Cloudflare dashboard
+2. **Generate API tokens** with R2 read/write permissions
+3. **Configure public access** (optional) for direct image access
+4. **Set up custom domain** (recommended) for better caching and CDN benefits
 
 ## Testing the API
 
@@ -157,6 +193,20 @@ For production deployment, you'll need to configure a Redis instance. Recommende
 
 Add your `REDIS_URL` environment variable in your Vercel project settings.
 
+### Cloudflare R2 on Vercel
+
+For production image upload functionality:
+
+1. **Set up Cloudflare R2** bucket with your Cloudflare account
+2. **Configure environment variables** in your Vercel project settings:
+   - `NEXT_PUBLIC_R2_ENDPOINT`
+   - `NEXT_PUBLIC_R2_ACCESS_KEY`
+   - `R2_SECRET_ACCESS_KEY`
+   - `NEXT_PUBLIC_R2_BUCKET`
+   - `NEXT_PUBLIC_R2_HOST`
+3. **Configure CORS** on your R2 bucket for web uploads (if needed)
+4. **Set up custom domain** for better performance and caching
+
 Deploy your GitHub repository to [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme). The serverless functions will automatically use Bun instead of Node.js for improved performance.
 
 **Live Demo**: [vercel-bun-nine.vercel.app](https://vercel-bun-nine.vercel.app)
@@ -170,12 +220,15 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/new?utm_medium=defa
 - **Eden Treaty** for type-safe API communication
 - **Tailwind CSS** for utility-first styling
 - **Radix UI** components for accessible UI primitives
+- **Drag & drop file upload** with visual feedback and progress tracking
 
 ### Backend Architecture
 
 - **Elysia.js** framework for high-performance APIs
 - **Bun's native Redis client** for direct Redis communication
+- **Bun's native S3 client** for Cloudflare R2 integration
 - **Session-based storage** with automatic cleanup
+- **File upload handling** with validation and metadata management
 - **Type validation** with Elysia's built-in schema system
 - **CORS support** for cross-origin requests
 
@@ -187,6 +240,13 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/new?utm_medium=defa
 
 This creates a fully type-safe data flow from API endpoints to UI components with automatic TypeScript inference.
 
+### Storage Architecture
+
+- **Session-scoped data** in Redis with automatic TTL
+- **Persistent file storage** in Cloudflare R2 with CDN delivery
+- **Metadata synchronization** between Redis (session state) and R2 (file storage)
+- **Optimistic UI updates** with conflict resolution
+
 ## Learn More
 
 ### About This Runtime
@@ -194,6 +254,13 @@ This creates a fully type-safe data flow from API endpoints to UI components wit
 - [vercel-bun Documentation](../README.md) - Learn about the custom Bun runtime
 - [Bun Runtime](https://bun.sh) - High-performance JavaScript runtime
 - [Bun Redis Client](https://bun.sh/docs/api/redis) - Native Redis support in Bun
+- [Bun S3 Client](https://bun.sh/docs/api/s3) - Native S3-compatible storage client
+
+### Cloud Storage
+
+- [Cloudflare R2](https://developers.cloudflare.com/r2/) - S3-compatible object storage
+- [R2 API Documentation](https://developers.cloudflare.com/r2/api/) - Complete R2 API reference
+- [R2 Pricing](https://developers.cloudflare.com/r2/pricing/) - Cost-effective storage pricing
 
 ### Framework Documentation
 
