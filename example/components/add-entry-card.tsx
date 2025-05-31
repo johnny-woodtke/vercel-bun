@@ -230,7 +230,7 @@ export function AddEntryCard() {
                               type="button"
                               variant="destructive"
                               size="sm"
-                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 cursor-pointer"
                               onClick={removeImage}
                               disabled={isAddingEntry}
                             >
@@ -304,7 +304,11 @@ export function AddEntryCard() {
               )}
             />
 
-            <Button type="submit" disabled={isAddingEntry} className="w-full">
+            <Button
+              type="submit"
+              disabled={isAddingEntry}
+              className="w-full cursor-pointer"
+            >
               <Plus className="w-4 h-4 mr-2" />
               {isAddingEntry ? "Adding..." : "Add Entry"}
             </Button>

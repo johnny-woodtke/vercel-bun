@@ -8,14 +8,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
 
 export function EntriesTable() {
-  const {
-    entries,
-    isFetching,
-    error,
-    deleteEntry,
-    isDeletingEntry,
-    refresh,
-  } = useRedisEntries();
+  const { entries, isFetching, error, deleteEntry, isDeletingEntry, refresh } =
+    useRedisEntries();
 
   async function handleDeleteEntry(id: string) {
     try {
@@ -33,6 +27,7 @@ export function EntriesTable() {
           <Button
             variant="outline"
             size="sm"
+            className="cursor-pointer"
             onClick={refresh}
             disabled={isFetching}
           >

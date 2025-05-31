@@ -102,7 +102,7 @@ export function SessionCard() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            className="flex-shrink-0"
+            className="flex-shrink-0 cursor-pointer"
           >
             <RefreshCw className="size-4 mr-2" />
             Refresh
@@ -128,7 +128,7 @@ export function SessionCard() {
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="flex-shrink-0"
+            className="flex-shrink-0 cursor-pointer"
           >
             <Copy className="size-4" />
           </Button>
