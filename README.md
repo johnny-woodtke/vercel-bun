@@ -100,15 +100,10 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/docs/git#deploying-
 
 See the [example](./example) directory for a complete example of using this runtime with a Next.js project.
 
-**[Live Bun Redis Client Demo](https://vercel-bun-nine.vercel.app)**
+**[Live Bun Redis/S3 Client Demo](https://vercel-bun-nine.vercel.app)**
 
 ## Next Steps
 
-- [ ] **Example Project Features**
-  - Combine Session Info, Update Session, and Add Entry cards into a single form.
-    - Populate with default session ID from cookies/server
-    - Max 120 second TTL
-  - Image upload with Bun S3 Client + Cloudflare R2 bucket (https://assets.godsreveal.com).
 - [ ] **Performance Benchmarks**: Create performance comparisons between Bun and Node.js runtimes.
 - [ ] **Framework Examples**: Add more framework examples (Hono, Fastify, etc.).
 
