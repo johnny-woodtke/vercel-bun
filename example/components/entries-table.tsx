@@ -56,7 +56,7 @@ export function EntriesTable() {
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No entries found. Add some text above to get started!
+            No entries found. Add a new entry above to get started!
           </div>
         ) : (
           <div className="space-y-6">

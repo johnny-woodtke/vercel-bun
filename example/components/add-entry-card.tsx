@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
+import { MAX_TEXT_LENGTH, MAX_TTL, MIN_TTL } from "@/lib/constants";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -43,11 +44,16 @@ const fileSchema = z
 // Form schema with conditional validation
 const formSchema = z
   .object({
-    text: z.string().max(1000, "Text must be less than 1000 characters"),
+    text: z
+      .string()
+      .max(
+        MAX_TEXT_LENGTH,
+        `Text must be less than ${MAX_TEXT_LENGTH} characters`
+      ),
     ttl: z
       .number()
-      .min(10, "TTL must be at least 10 seconds")
-      .max(300, "TTL must be at most 300 seconds"),
+      .min(MIN_TTL, `TTL must be at least ${MIN_TTL} seconds`)
+      .max(MAX_TTL, `TTL must be at most ${MAX_TTL} seconds`),
     image: z.optional(fileSchema),
   })
   .refine((data) => data.text.trim().length > 0 || data.image, {
@@ -58,11 +64,10 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 
 export function AddEntryCard() {
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Redis entries management utils
   const { addEntry, isAddingEntry } = useRedisEntries();
 
+  // Form management utils
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -72,6 +77,10 @@ export function AddEntryCard() {
     },
   });
 
+  // Watch the image field
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const watchedImage = form.watch("image");
 
   // Handle image preview when image changes

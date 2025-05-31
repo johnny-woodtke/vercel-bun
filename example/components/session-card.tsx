@@ -27,10 +27,13 @@ export function SessionCard() {
     setSessionIdParam(value);
   }
 
-  // Initialize sessionId from query parameter on component mount
+  // Manage the session ID state and query parameter
+  const sessionIdParam = getSessionIdParam();
   useEffect(() => {
-    // Get the session ID from the query parameter
-    const sessionIdParam = getSessionIdParam();
+    // If the state and the param are the same, return
+    if (sessionIdState === sessionIdParam) {
+      return;
+    }
 
     // If the session ID exists, set the state
     if (sessionIdParam) {
@@ -41,7 +44,7 @@ export function SessionCard() {
     // Generate a new session ID and set the state and query parameter
     const newSessionId = crypto.randomUUID();
     setSessionIdStateAndParam(newSessionId);
-  }, []);
+  }, [sessionIdParam]);
 
   // Create a debounced version of the refresh function
   const refreshEntries = useCallback(
@@ -104,15 +107,9 @@ export function SessionCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Session</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Manage your unique session identifier. Use the refresh button to
-          generate a new ID or copy the current one to share.
-        </p>
-      </CardHeader>
-      <CardContent>
-        <form className="flex gap-2 items-center">
+      <CardHeader className="flex flex-col w-full space-y-2">
+        <div className="flex justify-between w-full">
+          <CardTitle className="text-lg">Session</CardTitle>
           <Button
             type="button"
             variant="outline"
@@ -120,8 +117,17 @@ export function SessionCard() {
             onClick={handleRefresh}
             className="flex-shrink-0"
           >
-            <RefreshCw className="size-4" />
+            <RefreshCw className="size-4 mr-2" />
+            Refresh
           </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Manage your unique session identifier. Use the refresh button to
+          generate a new ID or copy the current one to share.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <form className="flex gap-2 items-center">
           <Input
             value={sessionIdState}
             onChange={handleInputChange}
