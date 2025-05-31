@@ -4,13 +4,16 @@ import { v4 as uuidv4 } from "uuid";
 import {
   MAX_TEXT_LENGTH,
   MAX_TTL,
+  MEMBER_ID_COOKIE_NAME,
   MIN_TTL,
   SESSION_ID_PARAM_NAME,
 } from "@/lib/constants";
 import { getImageUrl, r2 } from "@/lib/r2";
-import { redisEntrySchema, SessionRedisService } from "@/lib/redis";
+import { memberId, redisEntrySchema, SessionRedisService } from "@/lib/redis";
 
 export const redisRoutes = new Elysia({ prefix: "/redis" })
+
+  .use(memberId)
 
   .post(
     "/entries",
@@ -118,18 +121,28 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .get(
     "/entries",
-    async ({ query: { [SESSION_ID_PARAM_NAME]: sessionId }, set }) => {
+    async ({
+      query: { [SESSION_ID_PARAM_NAME]: sessionId },
+      set,
+      memberId,
+    }) => {
       try {
         // Initialize Redis service
         const redisService = new SessionRedisService(sessionId);
 
-        // Get all entries
-        const entries = await redisService.getAllEntries();
+        // Track the current member as online
+        await redisService.trackMember(memberId);
 
-        // Return entries and count
+        // Get all entries and online member count
+        const [entries, onlineCount] = await Promise.all([
+          redisService.getAllEntries(),
+          redisService.getOnlineMemberCount(),
+        ]);
+
+        // Return entries, count, and online member count
         return {
           data: entries,
-          count: entries.length,
+          onlineCount,
         };
       } catch (error) {
         console.error("Failed to fetch entries:", error);
@@ -147,7 +160,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       response: {
         200: t.Object({
           data: t.Array(redisEntrySchema),
-          count: t.Number(),
+          onlineCount: t.Number(),
         }),
         500: t.Object({
           error: t.String(),

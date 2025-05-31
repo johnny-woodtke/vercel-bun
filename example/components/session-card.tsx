@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, RefreshCw } from "lucide-react";
+import { Copy, Plus, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
 import { useSessionParam } from "@/hooks/use-session-param";
+import { cn } from "@/lib/utils";
 
 export function SessionCard() {
   // State for the session ID
@@ -64,15 +65,15 @@ export function SessionCard() {
     const uuid = uuidv4();
     setSessionIdState(uuid);
     setSessionIdParam(uuid);
-    toast.success("Session ID refreshed!");
+    toast.success("New session created!");
   }
 
   // Redis entries management utils (for updating the entries table on session ID changes)
-  const { refresh } = useRedisEntries();
+  const { refresh: refreshEntries, onlineCount } = useRedisEntries();
 
   // Update the entries table when the session ID changes
   useEffect(() => {
-    refresh();
+    refreshEntries();
   }, [sessionIdParam]);
 
   // Handle copy
@@ -94,7 +95,7 @@ export function SessionCard() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-col w-full space-y-2">
+      <CardHeader className="flex flex-col w-full space-y-1">
         <div className="flex justify-between w-full">
           <CardTitle className="text-lg">Session</CardTitle>
           <Button
@@ -104,35 +105,46 @@ export function SessionCard() {
             onClick={handleRefresh}
             className="flex-shrink-0 cursor-pointer"
           >
-            <RefreshCw className="size-4 mr-2" />
-            Refresh
+            <Plus className="size-4 mr-1" />
+            New
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Manage your unique session identifier. Use the refresh button to
-          generate a new ID or copy the current one to share.
+          Create a new session, join an existing one, or copy your session ID to
+          share with others.
         </p>
       </CardHeader>
       <CardContent>
-        <form className="flex gap-2 items-center">
-          <Input
-            value={sessionIdState}
-            onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            onKeyDown={handleInputKeyDown}
-            placeholder="Session ID..."
-            className="flex-1 text-sm"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleCopy}
-            className="flex-shrink-0 cursor-pointer"
-          >
-            <Copy className="size-4" />
-          </Button>
-        </form>
+        <div className="flex flex-col gap-3">
+          <form className="flex gap-2 items-center">
+            <Input
+              value={sessionIdState}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              placeholder="Session ID..."
+              className="flex-1 text-sm"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              className="flex-shrink-0 cursor-pointer"
+            >
+              <Copy className="size-4" />
+            </Button>
+          </form>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground pl-2">
+            <div
+              className={cn(
+                "w-2 h-2 rounded-full",
+                onlineCount > 0 ? "bg-green-500" : "bg-muted-foreground"
+              )}
+            />
+            <span>{onlineCount} online</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

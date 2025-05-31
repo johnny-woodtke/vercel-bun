@@ -28,7 +28,7 @@ export function useRedisEntries() {
       });
 
       if (res.data) {
-        return res.data.data;
+        return res.data;
       }
 
       throw new Error(
@@ -117,7 +117,8 @@ export function useRedisEntries() {
   }
 
   return {
-    entries: entriesQuery.data || [],
+    entries: entriesQuery.data?.data || [],
+    onlineCount: entriesQuery.data?.onlineCount || 0,
     isLoading: entriesQuery.isLoading,
     isFetching: entriesQuery.isFetching,
     error: entriesQuery.error,
