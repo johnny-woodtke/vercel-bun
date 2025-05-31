@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { RedisEntry } from "@/lib/redis";
 
 function getTimeRemaining(expiresAt: string) {
@@ -56,9 +56,9 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
   return (
     <Card className="relative overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/40 transition-colors">
       <CardContent>
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 w-full">
           {/* Time remaining and delete button row */}
-          <div className="flex justify-end gap-2 shrink-0">
+          <div className="flex justify-between">
             <Badge
               variant={isExpiringSoon ? "destructive" : "secondary"}
               className="text-xs"
@@ -78,25 +78,25 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
             </Button>
           </div>
 
-          {/* Image */}
-          {entry.imageUrl && (
-            <div className="w-full max-w-sm">
-              <AspectRatio ratio={16 / 9}>
-                <Image
-                  src={entry.imageUrl}
-                  alt="Entry image"
-                  fill
-                  className="rounded-lg object-cover shadow-md"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-              </AspectRatio>
-            </div>
+          {/* Text */}
+          {entry.text && (
+            <p className="pl-1 text-foreground leading-relaxed break-words">
+              {entry.text}
+            </p>
           )}
 
-          {/* Text */}
-          <p className="text-sm text-foreground leading-relaxed break-words">
-            {entry.text}
-          </p>
+          {/* Image */}
+          {entry.imageUrl && (
+            <div className="relative flex w-full">
+              <Image
+                src={entry.imageUrl}
+                alt="Entry image"
+                width={800}
+                height={600}
+                className="w-full h-auto object-contain rounded-md shadow-md"
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

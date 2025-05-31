@@ -120,14 +120,14 @@ export function SessionCard() {
             onClick={handleRefresh}
             className="flex-shrink-0"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="size-4" />
           </Button>
           <Input
             value={sessionIdState}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
             placeholder="Session ID..."
-            className="flex-1"
+            className="flex-1 text-sm"
           />
           <Button
             type="button"
@@ -136,7 +136,7 @@ export function SessionCard() {
             onClick={handleCopy}
             className="flex-shrink-0"
           >
-            <Copy className="w-4 h-4" />
+            <Copy className="size-4" />
           </Button>
         </form>
       </CardContent>

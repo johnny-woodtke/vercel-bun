@@ -1,73 +1,99 @@
 "use client";
 
-import { Plus, Upload, X, ImageIcon } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ImageIcon, Plus, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
+
+// Custom validation for File objects
+const fileSchema = z
+  .instanceof(File)
+  .refine(
+    (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    "Please select a valid image file (JPEG, PNG, GIF, or WebP)"
+  )
+  .refine(
+    (file) => file.size <= MAX_IMAGE_SIZE,
+    "Image size must be less than 5MB"
+  );
+
+// Form schema with conditional validation
+const formSchema = z
+  .object({
+    text: z.string().max(1000, "Text must be less than 1000 characters"),
+    ttl: z
+      .number()
+      .min(10, "TTL must be at least 10 seconds")
+      .max(300, "TTL must be at most 300 seconds"),
+    image: z.optional(fileSchema),
+  })
+  .refine((data) => data.text.trim().length > 0 || data.image, {
+    message: "Either text or image is required",
+    path: ["text"], // This will show the error on the text field
+  });
+
+type FormValues = z.infer<typeof formSchema>;
+
 export function AddEntryCard() {
-  const [newText, setNewText] = useState("");
-  const [ttl, setTtl] = useState(120); // Default to 120 seconds
-  const [ttlError, setTtlError] = useState("");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addEntry, isAddingEntry } = useRedisEntries();
 
-  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-  const ACCEPTED_IMAGE_TYPES = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-  ];
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      text: "",
+      ttl: 120,
+      image: undefined,
+    },
+  });
 
-  function validateTtl(value: number) {
-    if (value < 10) {
-      return "TTL must be at least 10 seconds";
-    }
-    if (value > 300) {
-      return "TTL must be at most 300 seconds (5 minutes)";
-    }
-    return "";
-  }
+  const watchedImage = form.watch("image");
 
-  function handleTtlChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = parseInt(e.target.value) || 0;
-    setTtl(value);
-    setTtlError(validateTtl(value));
-  }
-
-  function validateImageFile(file: File): string | null {
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      return "Please select a valid image file (JPEG, PNG, GIF, or WebP)";
+  // Handle image preview when image changes
+  useEffect(() => {
+    if (watchedImage) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(watchedImage);
+    } else {
+      setImagePreview(null);
     }
-    if (file.size > MAX_IMAGE_SIZE) {
-      return "Image size must be less than 5MB";
-    }
-    return null;
-  }
+  }, [watchedImage]);
 
   function handleImageSelect(file: File) {
-    const error = validateImageFile(file);
-    if (error) {
-      alert(error);
-      return;
+    form.setValue("image", file);
+    form.clearErrors("image");
+    // Clear text error if we now have an image (since either is required)
+    if (form.getValues("text").trim().length === 0) {
+      form.clearErrors("text");
     }
-
-    setSelectedImage(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
   }
 
   function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -99,35 +125,31 @@ export function AddEntryCard() {
   }
 
   function removeImage() {
-    setSelectedImage(null);
+    form.setValue("image", undefined);
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }
 
-  async function handleAddEntry(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newText.trim()) return;
-
-    const ttlValidationError = validateTtl(ttl);
-    if (ttlValidationError) {
-      setTtlError(ttlValidationError);
-      return;
-    }
-
+  async function onSubmit(values: FormValues) {
     try {
-      await addEntry({ text: newText.trim(), ttl, image: selectedImage });
-      setNewText("");
-      setTtl(120); // Reset to default
-      setTtlError("");
-      removeImage();
+      await addEntry({
+        text: values.text.trim(),
+        ttl: values.ttl,
+        image: values.image || null,
+      });
+
+      // Reset form
+      form.reset();
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (error) {
       // Error is already handled in the hook
     }
   }
-
-  const isFormValid = newText.trim() && !ttlError && ttl >= 10 && ttl <= 300;
 
   return (
     <Card>
@@ -140,115 +162,145 @@ export function AddEntryCard() {
         </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleAddEntry} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="text">Text</Label>
-            <Input
-              id="text"
-              value={newText}
-              onChange={(e) => setNewText(e.target.value)}
-              placeholder="Enter text to store in Redis..."
-              maxLength={1000}
-              disabled={isAddingEntry}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="image">Image (optional)</Label>
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              {imagePreview ? (
-                <div className="space-y-2">
-                  <div className="relative inline-block">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="max-w-full max-h-32 rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                      onClick={removeImage}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Text</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter text to store in Redis..."
+                      maxLength={1000}
                       disabled={isAddingEntry}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-600">{selectedImage?.name}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
-                      Drop an image here, or{" "}
-                      <button
-                        type="button"
-                        className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isAddingEntry}
-                      >
-                        browse
-                      </button>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      JPEG, PNG, GIF, WebP • Max 5MB
-                    </p>
-                  </div>
-                </div>
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // Clear text error if we now have text (since either is required)
+                        if (e.target.value.trim().length > 0) {
+                          form.clearErrors("text");
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>Enter text to store</FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileInputChange}
-              className="hidden"
-              disabled={isAddingEntry}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ttl">Time to live (seconds)</Label>
-            <Input
-              id="ttl"
-              type="number"
-              value={ttl}
-              onChange={handleTtlChange}
-              placeholder="120"
-              min={10}
-              max={300}
-              disabled={isAddingEntry}
-              className={ttlError ? "border-destructive" : ""}
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                        dragActive
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-300 hover:border-gray-400"
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      {imagePreview ? (
+                        <div className="space-y-2">
+                          <div className="relative inline-block">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              className="max-w-full max-h-32 rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                              onClick={removeImage}
+                              disabled={isAddingEntry}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {watchedImage?.name}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">
+                              Drop an image here, or{" "}
+                              <button
+                                type="button"
+                                className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isAddingEntry}
+                              >
+                                browse
+                              </button>
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              JPEG, PNG, GIF, WebP • Max 5MB
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                    disabled={isAddingEntry}
+                  />
+                </FormItem>
+              )}
             />
-            {ttlError ? (
-              <p className="text-sm text-destructive">{ttlError}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Enter a value between 10 and 300 seconds
-              </p>
-            )}
-          </div>
-          <Button
-            type="submit"
-            disabled={isAddingEntry || !isFormValid}
-            className="w-full"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {isAddingEntry ? "Adding..." : "Add Entry"}
-          </Button>
-        </form>
+
+            <FormField
+              control={form.control}
+              name="ttl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time to live (seconds)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="120"
+                      min={10}
+                      max={300}
+                      disabled={isAddingEntry}
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter a value between 10 and 300 seconds
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" disabled={isAddingEntry} className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              {isAddingEntry ? "Adding..." : "Add Entry"}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

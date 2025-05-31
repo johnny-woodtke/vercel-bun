@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 
 import { Entry } from "@/components/entry";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
 
 export function EntriesTable() {
@@ -27,22 +27,25 @@ export function EntriesTable() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-lg">Active Entries</CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refresh}
-          disabled={isFetching}
-        >
-          <RefreshCw
-            className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </Button>
-      </CardHeader>
-      <CardContent>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-lg">Active Entries</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            disabled={isFetching}
+          >
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
+        </CardHeader>
+      </Card>
+
+      <div className="mt-4">
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
             Loading entries...
@@ -56,7 +59,7 @@ export function EntriesTable() {
             No entries found. Add some text above to get started!
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {entries.map((entry) => (
               <Entry
                 key={entry.id}
@@ -67,7 +70,7 @@ export function EntriesTable() {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </>
   );
 }

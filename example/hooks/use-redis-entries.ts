@@ -8,12 +8,14 @@ import { SESSION_ID_PARAM_NAME } from "@/lib/constants";
 import { eden } from "@/lib/eden";
 
 export function useRedisEntries() {
+  // Query client
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
 
   // Get session ID from URL parameters
+  const searchParams = useSearchParams();
   const sessionId = searchParams.get(SESSION_ID_PARAM_NAME);
 
+  // Query to fetch entries
   const entriesQuery = useQuery({
     queryKey: ["entries", sessionId],
     queryFn: async () => {
@@ -21,17 +23,24 @@ export function useRedisEntries() {
         throw new Error("Session ID is required");
       }
 
-      const response = await eden.api.redis.entries.get({
+      const res = await eden.api.redis.entries.get({
         query: { [SESSION_ID_PARAM_NAME]: sessionId },
       });
-      if (response.data?.success) {
-        return response.data.data;
+
+      if (res.data) {
+        return res.data.data;
       }
-      throw new Error("Failed to load entries");
+
+      throw new Error(
+        "error" in res.error.value
+          ? res.error.value.error
+          : "Failed to load entries"
+      );
     },
     enabled: !!sessionId, // Only run query if session ID exists
   });
 
+  // Mutation to add an entry
   const addEntryMutation = useMutation({
     mutationFn: async ({
       text,
@@ -46,27 +55,23 @@ export function useRedisEntries() {
         throw new Error("Session ID is required");
       }
 
-      const response = await eden.api.redis.entries.post(
-        {
-          text,
-          ttl,
-          image: image ?? undefined,
-        },
-        {
-          query: { [SESSION_ID_PARAM_NAME]: sessionId },
-        }
+      const res = await eden.api.redis.entries.post(
+        { text, ttl, image },
+        { query: { [SESSION_ID_PARAM_NAME]: sessionId } }
       );
 
-      const data = response.data;
-      if (!data?.success) {
-        throw new Error(data?.error || "Failed to add entry");
+      if (res.data) {
+        return res.data;
       }
 
-      return data;
+      throw new Error(
+        "error" in res.error.value
+          ? res.error.value.error
+          : "Failed to add entry"
+      );
     },
     onSuccess: () => {
-      // Invalidate and refetch both queries
-      queryClient.invalidateQueries({ queryKey: ["entries", sessionId] });
+      refresh();
       toast.success("Entry added successfully!");
     },
     onError: (error) => {
@@ -75,23 +80,29 @@ export function useRedisEntries() {
     },
   });
 
+  // Mutation to delete an entry
   const deleteEntryMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!sessionId) {
         throw new Error("Session ID is required");
       }
 
-      const response = await eden.api.redis.entries({ id }).delete(undefined, {
+      const res = await eden.api.redis.entries({ id }).delete(undefined, {
         query: { [SESSION_ID_PARAM_NAME]: sessionId },
       });
-      if (!response.data?.success) {
-        throw new Error("Failed to delete entry");
+
+      if (res.data) {
+        return res.data;
       }
-      return response.data;
+
+      throw new Error(
+        "error" in res.error.value
+          ? res.error.value.error
+          : "Failed to delete entry"
+      );
     },
     onSuccess: () => {
-      // Invalidate and refetch both queries
-      queryClient.invalidateQueries({ queryKey: ["entries", sessionId] });
+      refresh();
       toast.success("Entry deleted successfully!");
     },
     onError: (error) => {
@@ -100,6 +111,7 @@ export function useRedisEntries() {
     },
   });
 
+  // Refresh the entries query
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["entries", sessionId] });
   }

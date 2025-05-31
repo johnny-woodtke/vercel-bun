@@ -1,15 +1,18 @@
 import { RedisClient } from "bun";
+import { Static, t } from "elysia";
 
 export const redis = new RedisClient(Bun.env.REDIS_URL);
 
-export interface RedisEntry {
-  id: string;
-  text: string;
-  createdAt: string;
-  expiresAt: string;
-  ttl: number;
-  imageUrl?: string;
-}
+export const redisEntrySchema = t.Object({
+  id: t.String(),
+  text: t.String(),
+  createdAt: t.String(),
+  expiresAt: t.String(),
+  ttl: t.Number(),
+  imageUrl: t.Optional(t.String()),
+});
+
+export type RedisEntry = Static<typeof redisEntrySchema>;
 
 export class SessionRedisService {
   private static readonly TTL_SECONDS = 120;
