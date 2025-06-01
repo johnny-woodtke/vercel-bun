@@ -5,10 +5,7 @@ import { toast } from "sonner";
 
 import { useSessionParam } from "@/hooks/use-session-param";
 import { eden } from "@/lib/eden";
-
-function getEntriesQueryKey<T extends string | null>(sessionId: T) {
-  return ["entries", sessionId] as const;
-}
+import { getEntriesQueryKey } from "@/lib/tanstack";
 
 export function useRedisEntries() {
   // Query client

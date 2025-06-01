@@ -9,11 +9,9 @@ import {
   SESSION_ID_PARAM_NAME,
 } from "@/lib/constants";
 import { getImageUrl, r2 } from "@/lib/r2";
-import { memberId, redisEntrySchema, SessionRedisService } from "@/lib/redis";
+import { redisEntrySchema, SessionRedisService } from "@/lib/redis";
 
 export const redisRoutes = new Elysia({ prefix: "/redis" })
-
-  .use(memberId)
 
   .post(
     "/entries",
@@ -124,13 +122,16 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .get(
     "/entries",
-    async ({ query: { sessionId }, set, memberId }) => {
+    async ({ query: { sessionId }, set, cookie: { memberId } }) => {
       try {
         // Initialize Redis service
         const redisService = new SessionRedisService();
 
         // Track the current member as online
-        await redisService.trackMember({ sessionId, memberId });
+        await redisService.trackMember({
+          sessionId,
+          memberId: memberId.value,
+        });
 
         // Get all entries and online member count
         const [entries, onlineCount] = await Promise.all([
@@ -155,6 +156,9 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     {
       query: t.Object({
         [SESSION_ID_PARAM_NAME]: t.String(),
+      }),
+      cookie: t.Object({
+        [MEMBER_ID_COOKIE_NAME]: t.String(),
       }),
       response: {
         200: t.Object({
