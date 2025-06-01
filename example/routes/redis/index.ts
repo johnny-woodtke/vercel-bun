@@ -15,7 +15,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .post(
     "/entries",
-    async ({ body, query: { sessionId }, set }) => {
+    async ({ body, query: { sessionId }, set, cookie: { memberId } }) => {
       try {
         // Initialize Redis service
         const redisService = new SessionRedisService();
@@ -79,6 +79,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
           ttl,
           imageUrl,
           sessionId,
+          memberId: memberId.value,
         });
 
         // Return the entry
@@ -102,6 +103,9 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
           t.String(),
         ]),
         image: t.Optional(t.Nullable(t.File())),
+      }),
+      cookie: t.Object({
+        [MEMBER_ID_COOKIE_NAME]: t.String(),
       }),
       query: t.Object({
         [SESSION_ID_PARAM_NAME]: t.String(),
@@ -174,24 +178,43 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .delete(
     "/entries/:entryId",
-    async ({ params: { entryId }, query: { sessionId }, set }) => {
+    async ({
+      params: { entryId },
+      query: { sessionId },
+      set,
+      cookie: { memberId },
+    }) => {
       try {
         // Initialize Redis service
         const redisService = new SessionRedisService();
+
+        // Verify that the member is the owner of the entry
+        const entry = await redisService.getEntry({
+          sessionId,
+          entryId,
+        });
+
+        // Return error if entry not found
+        if (!entry) {
+          set.status = 404;
+          return {
+            error: "Entry not found",
+          };
+        }
+
+        // Verify that the member is the owner of the entry
+        if (entry.memberId !== memberId.value) {
+          set.status = 403;
+          return {
+            error: "You are not the owner of this entry",
+          };
+        }
 
         // Delete entry
         const deleted = await redisService.deleteEntry({
           sessionId,
           entryId,
         });
-
-        // Return error if entry not found
-        if (!deleted) {
-          set.status = 404;
-          return {
-            error: "Entry not found",
-          };
-        }
 
         // Return success message
         return {
@@ -208,12 +231,18 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
       params: t.Object({
         entryId: t.String(),
       }),
+      cookie: t.Object({
+        [MEMBER_ID_COOKIE_NAME]: t.String(),
+      }),
       query: t.Object({
         [SESSION_ID_PARAM_NAME]: t.String(),
       }),
       response: {
         200: t.Object({
           message: t.String(),
+        }),
+        403: t.Object({
+          error: t.String(),
         }),
         404: t.Object({
           error: t.String(),

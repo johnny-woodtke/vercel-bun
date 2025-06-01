@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useMemberId } from "@/hooks/use-member-id";
 import type { RedisEntry } from "@/lib/redis";
 
 function getTimeRemaining(expiresAt: string) {
@@ -40,17 +41,21 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
     getTimeRemaining(entry.expiresAt)
   );
 
-  // Update the time remaining every 500ms
+  // Update the time remaining every 1000ms
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining(entry.expiresAt));
-    }, 500);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [entry.expiresAt]);
 
   // Check if the entry is expiring soon
   const isExpiringSoon = timeRemaining < 30;
+
+  // Check if the member is the author of the entry
+  const { memberId } = useMemberId();
+  const isAuthor = memberId === entry.memberId;
 
   return (
     <Card className="relative overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/40 transition-colors">
@@ -66,15 +71,17 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
               {formatTimeRemaining(timeRemaining)}
             </Badge>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(entry.id)}
-              disabled={isDeleting}
-              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            {isAuthor && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(entry.id)}
+                disabled={isDeleting}
+                className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
 
           {/* Text */}
