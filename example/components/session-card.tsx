@@ -13,27 +13,15 @@ import { useSessionParam } from "@/hooks/use-session-param";
 import { cn } from "@/lib/utils";
 
 export function SessionCard() {
+  // Get session ID
+  const { sessionIdParam, setSessionIdParam } = useSessionParam();
+
   // State for the session ID
-  const [sessionIdState, setSessionIdState] = useState("");
+  const [sessionIdState, setSessionIdState] = useState(sessionIdParam);
 
-  // Session parameter management utils
-  const { getSessionIdParam, setSessionIdParam } = useSessionParam();
-
-  // Get the session ID param
-  const sessionIdParam = getSessionIdParam();
-
-  // Populate the state with the session ID param on mount or when the session ID param changes
+  // Handle session ID change
   useEffect(() => {
-    // If the session ID param is not empty, set the state
-    if (sessionIdParam) {
-      setSessionIdState(sessionIdParam);
-      return;
-    }
-
-    // Generate a new session ID and set the state and query parameter
-    const newSessionId = uuidv4();
-    setSessionIdState(newSessionId);
-    setSessionIdParam(newSessionId);
+    setSessionIdState(sessionIdParam);
   }, [sessionIdParam]);
 
   // Handle input change

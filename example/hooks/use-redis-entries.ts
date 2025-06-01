@@ -12,17 +12,12 @@ export function useRedisEntries() {
   const queryClient = useQueryClient();
 
   // Get session ID from URL parameters
-  const { getSessionIdParam } = useSessionParam();
-  const sessionId = getSessionIdParam();
+  const { sessionIdParam: sessionId } = useSessionParam();
 
   // Query to fetch entries
   const entriesQuery = useQuery({
     queryKey: getEntriesQueryKey(sessionId),
     queryFn: async () => {
-      if (!sessionId) {
-        throw new Error("Session ID is required");
-      }
-
       const res = await eden.api.redis.entries.get({
         query: { sessionId },
       });
@@ -37,7 +32,6 @@ export function useRedisEntries() {
           : "Failed to load entries"
       );
     },
-    enabled: !!sessionId, // Only run query if session ID exists
   });
 
   // Mutation to add an entry
@@ -51,10 +45,6 @@ export function useRedisEntries() {
       ttl: number;
       image?: File | null;
     }) => {
-      if (!sessionId) {
-        throw new Error("Session ID is required");
-      }
-
       const res = await eden.api.redis.entries.post(
         { text, ttl, image },
         { query: { sessionId } }
@@ -83,10 +73,6 @@ export function useRedisEntries() {
   // Mutation to delete an entry
   const deleteEntryMutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!sessionId) {
-        throw new Error("Session ID is required");
-      }
-
       const res = await eden.api.redis
         .entries({ entryId: id })
         .delete(undefined, {

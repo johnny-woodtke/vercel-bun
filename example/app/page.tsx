@@ -12,6 +12,7 @@ import { EntriesTable } from "@/components/entries-table";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { SessionCard } from "@/components/session-card";
+import { SessionParamProvider } from "@/hooks/use-session-param";
 import { MEMBER_ID_COOKIE_NAME, SESSION_ID_PARAM_NAME } from "@/lib/constants";
 import { eden } from "@/lib/eden";
 import { getEntriesQueryKey } from "@/lib/tanstack";
@@ -55,11 +56,13 @@ export default async function Home({ searchParams }: HomePageProps) {
       <Header />
       <main className="flex-1 py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
-          <HydrationBoundary state={dehydrate(queryClient)}>
-            <SessionCard />
-            <AddEntryCard />
-            <EntriesTable />
-          </HydrationBoundary>
+          <SessionParamProvider sessionId={sessionId}>
+            <HydrationBoundary state={dehydrate(queryClient)}>
+              <SessionCard />
+              <AddEntryCard />
+              <EntriesTable />
+            </HydrationBoundary>
+          </SessionParamProvider>
         </div>
       </main>
       <Footer />
