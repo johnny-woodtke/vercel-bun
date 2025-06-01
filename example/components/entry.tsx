@@ -86,7 +86,7 @@ export function Entry({ entry, onDelete, isDeleting }: EntryProps) {
 
           {/* Image */}
           {entry.imageUrl && (
-            <div className="relative flex w-full">
+            <div className="relative flex w-full max-w-md">
               <Image
                 src={entry.imageUrl}
                 alt="Entry image"

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import type { ReactNode } from "react";
 
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 type RootLayoutParams = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export default function RootLayout({ children }: RootLayoutParams) {

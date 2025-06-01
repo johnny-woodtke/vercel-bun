@@ -6,8 +6,8 @@ export function Header() {
           Bun Runtime Demo
         </h1>
         <p className="text-center text-muted-foreground mt-2">
-          Store session-scoped data with Redis and handle file uploads with S3
-          using Bun's native APIs.
+          Store session-scoped data with Redis and handle file uploads with
+          S3—all powered by Bun's native APIs.
         </p>
       </div>
     </header>

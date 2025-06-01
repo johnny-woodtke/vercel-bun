@@ -2,7 +2,11 @@ import { RedisClient } from "bun";
 import Elysia, { Static, t } from "elysia";
 import { v4 as uuidv4 } from "uuid";
 
-import { MEMBER_ID_COOKIE_NAME } from "@/lib/constants";
+import {
+  ENTRIES_REFETCH_INTERVAL_MS,
+  MAX_TTL,
+  MEMBER_ID_COOKIE_NAME,
+} from "@/lib/constants";
 import { getVercelEnv } from "@/lib/utils";
 
 export const redis = new RedisClient(Bun.env.REDIS_URL);
@@ -42,56 +46,86 @@ export const memberId = new Elysia().derive({ as: "global" }, ({ cookie }) => {
 });
 
 export class SessionRedisService {
-  private static readonly TTL_SECONDS = 120;
-  private static readonly MEMBER_TTL_SECONDS = 15;
-
-  constructor(private sessionId: string) {}
-
-  private getSessionEntryKey(id: string): string {
-    return `session:${this.sessionId}:entry:${id}`;
+  private getSessionEntryKey({
+    sessionId,
+    entryId,
+  }: {
+    sessionId: string;
+    entryId: string;
+  }): string {
+    return `session:${sessionId}:entry:${entryId}`;
   }
 
-  private getSessionIndexKey(): string {
-    return `session:${this.sessionId}:index`;
+  private getSessionEntriesIndexKey({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): string {
+    return `session:${sessionId}:entries`;
   }
 
-  private getSessionMembersKey(): string {
-    return `session:${this.sessionId}:members`;
+  private getSessionMemberIndexKey({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): string {
+    return `session:${sessionId}:members`;
   }
 
-  private getSessionMemberKey(memberId: string): string {
-    return `session:${this.sessionId}:member:${memberId}`;
+  private getSessionMemberKey({
+    sessionId,
+    memberId,
+  }: {
+    sessionId: string;
+    memberId: string;
+  }): string {
+    return `session:${sessionId}:member:${memberId}`;
   }
 
-  async trackMember(memberId: string): Promise<void> {
+  async trackMember({
+    sessionId,
+    memberId,
+  }: {
+    sessionId: string;
+    memberId: string;
+  }): Promise<void> {
+    // Refetch TTL
+    const refetchTTL = Math.floor(ENTRIES_REFETCH_INTERVAL_MS / 1000);
+
     // Add member to the session with TTL
-    const membersKey = this.getSessionMembersKey();
-    async function setMembersSet() {
+    const setMembersSet = async () => {
+      const membersKey = this.getSessionMemberIndexKey({
+        sessionId,
+      });
       await redis.sadd(membersKey, memberId);
       await redis.expire(
         membersKey,
-        SessionRedisService.MEMBER_TTL_SECONDS + 10 // Set longer TTL for the set itself
+        refetchTTL + 15 // Set longer TTL for the set itself
       );
-    }
+    };
 
     // Set TTL for this specific member
-    const memberKey = this.getSessionMemberKey(memberId);
-    async function setMember() {
-      await redis.set(
-        memberKey,
-        "online",
-        "EX",
-        SessionRedisService.MEMBER_TTL_SECONDS
-      );
-    }
+    const setMember = async () => {
+      const memberKey = this.getSessionMemberKey({
+        sessionId,
+        memberId,
+      });
+      await redis.set(memberKey, "online", "EX", refetchTTL + 10);
+    };
 
     // Set the member and the members set
     await Promise.all([setMembersSet(), setMember()]);
   }
 
-  async getOnlineMemberCount(): Promise<number> {
+  async getOnlineMemberCount({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<number> {
     // Get all members in the session
-    const membersKey = this.getSessionMembersKey();
+    const membersKey = this.getSessionMemberIndexKey({
+      sessionId,
+    });
     const memberIds = await redis.smembers(membersKey);
 
     // If there are no members, return 0
@@ -100,30 +134,51 @@ export class SessionRedisService {
     }
 
     // Check which members are still online by checking their individual TTL keys
-    let onlineCount = 0;
-    await Promise.all(
-      memberIds.map(async (memberId) => {
-        const memberKey = this.getSessionMemberKey(memberId);
-        const isOnline = await redis.get(memberKey);
-
-        if (isOnline) {
-          onlineCount++;
-        } else {
-          // Remove expired member from the set
-          await redis.srem(membersKey, memberId);
-        }
+    const memberKeys = memberIds.map((memberId) =>
+      this.getSessionMemberKey({
+        sessionId,
+        memberId,
       })
+    );
+    const { onlineMemberKeys, offlineMemberIds } = await redis
+      .mget(...memberKeys)
+      .then((members) => {
+        return members.reduce<{
+          onlineMemberKeys: string[];
+          offlineMemberIds: string[];
+        }>(
+          (acc, member, index) => {
+            if (member) {
+              acc.onlineMemberKeys.push(memberKeys[index]);
+            } else {
+              acc.offlineMemberIds.push(memberIds[index]);
+            }
+            return acc;
+          },
+          { onlineMemberKeys: [], offlineMemberIds: [] }
+        );
+      });
+
+    // Remove offline members from the set
+    Promise.allSettled(
+      offlineMemberIds.map((memberId) => redis.srem(membersKey, memberId))
     );
 
     // Return the number of online members
-    return onlineCount;
+    return onlineMemberKeys.length;
   }
 
-  async addEntry(
-    text: string,
-    ttl: number = SessionRedisService.TTL_SECONDS,
-    imageUrl?: string
-  ): Promise<RedisEntry> {
+  async addEntry({
+    text,
+    ttl,
+    imageUrl,
+    sessionId,
+  }: {
+    text: string;
+    ttl: number;
+    imageUrl?: string;
+    sessionId: string;
+  }): Promise<RedisEntry> {
     // Generate a unique ID for the entry
     const id = uuidv4();
     const now = new Date();
@@ -139,19 +194,23 @@ export class SessionRedisService {
       ...(imageUrl && { imageUrl }),
     };
 
-    // Store the entry and then set TTL
-    const entryKey = this.getSessionEntryKey(id);
-    async function setEntry() {
-      await redis.set(entryKey, JSON.stringify(entry));
-      await redis.expire(entryKey, ttl);
-    }
-
-    // Add to session index (also with TTL)
-    const indexKey = this.getSessionIndexKey();
-    async function setIndex() {
+    // Add to session index
+    const setIndex = async () => {
+      const indexKey = this.getSessionEntriesIndexKey({
+        sessionId,
+      });
       await redis.sadd(indexKey, id);
-      await redis.expire(indexKey, ttl + 10); // Index expires slightly later
-    }
+      await redis.expire(indexKey, MAX_TTL + 10); // Index expires slightly later than max TTL of an entry
+    };
+
+    // Store the entry with TTL
+    const setEntry = async () => {
+      const entryKey = this.getSessionEntryKey({
+        sessionId,
+        entryId: id,
+      });
+      await redis.set(entryKey, JSON.stringify(entry), "EX", ttl);
+    };
 
     // Set the entry and the index
     await Promise.all([setEntry(), setIndex()]);
@@ -160,9 +219,15 @@ export class SessionRedisService {
     return entry;
   }
 
-  async getAllEntries(): Promise<RedisEntry[]> {
+  async getAllEntries({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<RedisEntry[]> {
     // Get all entries in the session
-    const indexKey = this.getSessionIndexKey();
+    const indexKey = this.getSessionEntriesIndexKey({
+      sessionId,
+    });
     const entryIds = await redis.smembers(indexKey);
 
     // If there are no entries, return an empty array
@@ -171,33 +236,46 @@ export class SessionRedisService {
     }
 
     // Get all entries in the session
-    const entries: RedisEntry[] = [];
     const now = new Date();
-    await Promise.all(
-      entryIds.map(async (id) => {
-        const entryKey = this.getSessionEntryKey(id);
-        const entryData = await redis.get(entryKey);
-
-        if (entryData) {
-          try {
-            const entry: RedisEntry = JSON.parse(entryData);
-            // Check if entry is still valid
-            if (new Date(entry.expiresAt) > now) {
-              entries.push(entry);
-            } else {
-              // Clean up expired entry from index
-              await redis.srem(indexKey, id);
-            }
-          } catch (error) {
-            console.error(`Failed to parse entry ${id}:`, error);
-            // Clean up corrupted entry
-            await redis.srem(indexKey, id);
-          }
-        } else {
-          // Entry expired, remove from index
-          await redis.srem(indexKey, id);
-        }
+    const entryKeys = entryIds.map((entryId) =>
+      this.getSessionEntryKey({
+        sessionId,
+        entryId,
       })
+    );
+    const { entries, expiredEntryIds } = await redis
+      .mget(...entryKeys)
+      .then((entries) =>
+        entries.reduce<{
+          entries: RedisEntry[];
+          expiredEntryIds: string[];
+        }>(
+          (acc, entry, index) => {
+            if (!entry) {
+              acc.expiredEntryIds.push(entryIds[index]);
+              return acc;
+            }
+
+            try {
+              const parsedEntry: RedisEntry = JSON.parse(entry);
+              if (new Date(parsedEntry.expiresAt) > now) {
+                acc.entries.push(parsedEntry);
+              } else {
+                acc.expiredEntryIds.push(entryIds[index]);
+              }
+            } catch (error) {
+              acc.expiredEntryIds.push(entryIds[index]);
+            }
+
+            return acc;
+          },
+          { entries: [], expiredEntryIds: [] }
+        )
+      );
+
+    // Remove expired entries from the index
+    Promise.allSettled(
+      expiredEntryIds.map((entryId) => redis.srem(indexKey, entryId))
     );
 
     // Sort entries by creation date (newest first)
@@ -207,22 +285,35 @@ export class SessionRedisService {
     );
   }
 
-  async deleteEntry(id: string): Promise<boolean> {
+  async deleteEntry({
+    sessionId,
+    entryId,
+  }: {
+    sessionId: string;
+    entryId: string;
+  }): Promise<boolean> {
     // Delete the entry
-    const entryKey = this.getSessionEntryKey(id);
-    const indexKey = this.getSessionIndexKey();
+    const entryKey = this.getSessionEntryKey({
+      sessionId,
+      entryId,
+    });
+    const indexKey = this.getSessionEntriesIndexKey({
+      sessionId,
+    });
 
-    // Delete the entry and the index
+    // Delete the entry
     const deleted = await redis.del(entryKey);
-    await redis.srem(indexKey, id);
+
+    // Remove the entry from the index
+    redis.srem(indexKey, entryId).catch(() => {});
 
     // Return true if the entry was deleted, false otherwise
     return deleted > 0;
   }
 
-  async getEntryCount(): Promise<number> {
+  async getEntryCount({ sessionId }: { sessionId: string }): Promise<number> {
     // Get all entries in the session
-    const entries = await this.getAllEntries();
+    const entries = await this.getAllEntries({ sessionId });
     return entries.length;
   }
 }

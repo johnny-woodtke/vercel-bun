@@ -17,10 +17,10 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .post(
     "/entries",
-    async ({ body, query: { [SESSION_ID_PARAM_NAME]: sessionId }, set }) => {
+    async ({ body, query: { sessionId }, set }) => {
       try {
         // Initialize Redis service
-        const redisService = new SessionRedisService(sessionId);
+        const redisService = new SessionRedisService();
 
         // Validate that either text or image is provided
         const text = body.text?.trim() ?? "";
@@ -76,7 +76,12 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
         }
 
         // Add entry to Redis
-        const entry = await redisService.addEntry(text, ttl, imageUrl);
+        const entry = await redisService.addEntry({
+          text,
+          ttl,
+          imageUrl,
+          sessionId,
+        });
 
         // Return the entry
         return {
@@ -94,12 +99,10 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     {
       body: t.Object({
         text: t.Optional(t.String({ maxLength: MAX_TEXT_LENGTH })),
-        ttl: t.Optional(
-          t.Union([
-            t.Number({ minimum: MIN_TTL, maximum: MAX_TTL }),
-            t.String(),
-          ])
-        ),
+        ttl: t.Union([
+          t.Number({ minimum: MIN_TTL, maximum: MAX_TTL }),
+          t.String(),
+        ]),
         image: t.Optional(t.Nullable(t.File())),
       }),
       query: t.Object({
@@ -121,22 +124,18 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
 
   .get(
     "/entries",
-    async ({
-      query: { [SESSION_ID_PARAM_NAME]: sessionId },
-      set,
-      memberId,
-    }) => {
+    async ({ query: { sessionId }, set, memberId }) => {
       try {
         // Initialize Redis service
-        const redisService = new SessionRedisService(sessionId);
+        const redisService = new SessionRedisService();
 
         // Track the current member as online
-        await redisService.trackMember(memberId);
+        await redisService.trackMember({ sessionId, memberId });
 
         // Get all entries and online member count
         const [entries, onlineCount] = await Promise.all([
-          redisService.getAllEntries(),
-          redisService.getOnlineMemberCount(),
+          redisService.getAllEntries({ sessionId }),
+          redisService.getOnlineMemberCount({ sessionId }),
         ]);
 
         // Return entries, count, and online member count
@@ -170,14 +169,17 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
   )
 
   .delete(
-    "/entries/:id",
-    async ({ params, query: { [SESSION_ID_PARAM_NAME]: sessionId }, set }) => {
+    "/entries/:entryId",
+    async ({ params: { entryId }, query: { sessionId }, set }) => {
       try {
         // Initialize Redis service
-        const redisService = new SessionRedisService(sessionId);
+        const redisService = new SessionRedisService();
 
         // Delete entry
-        const deleted = await redisService.deleteEntry(params.id);
+        const deleted = await redisService.deleteEntry({
+          sessionId,
+          entryId,
+        });
 
         // Return error if entry not found
         if (!deleted) {
@@ -200,7 +202,7 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        entryId: t.String(),
       }),
       query: t.Object({
         [SESSION_ID_PARAM_NAME]: t.String(),

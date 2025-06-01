@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Plus, RefreshCw } from "lucide-react";
+import { Copy, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -22,7 +22,7 @@ export function SessionCard() {
   // Get the session ID param
   const sessionIdParam = getSessionIdParam();
 
-  // Populate the state with the session ID param on mount
+  // Populate the state with the session ID param on mount or when the session ID param changes
   useEffect(() => {
     // If the session ID param is not empty, set the state
     if (sessionIdParam) {
@@ -34,7 +34,7 @@ export function SessionCard() {
     const newSessionId = uuidv4();
     setSessionIdState(newSessionId);
     setSessionIdParam(newSessionId);
-  }, []);
+  }, [sessionIdParam]);
 
   // Handle input change
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {

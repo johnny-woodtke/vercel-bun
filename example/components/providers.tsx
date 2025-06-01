@@ -2,19 +2,20 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import type { ReactNode } from "react";
+
+import { ENTRIES_REFETCH_INTERVAL_MS } from "@/lib/constants";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 1000, // 5 seconds
-      refetchInterval: 5 * 1000, // Auto-refetch every 5 seconds
+      staleTime: ENTRIES_REFETCH_INTERVAL_MS,
+      refetchInterval: ENTRIES_REFETCH_INTERVAL_MS,
     },
   },
 });
 
 type ProvidersParams = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function Providers({ children }: ProvidersParams) {

@@ -2,6 +2,8 @@ export const SESSION_ID_PARAM_NAME = "sessionId";
 
 export const MEMBER_ID_COOKIE_NAME = "memberId";
 
+export const ENTRIES_REFETCH_INTERVAL_MS = 5 * 1000; // 5 seconds
+
 export const MIN_TTL = 10;
 
 export const MAX_TTL = 300;

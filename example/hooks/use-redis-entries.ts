@@ -1,30 +1,33 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-import { SESSION_ID_PARAM_NAME } from "@/lib/constants";
+import { useSessionParam } from "@/hooks/use-session-param";
 import { eden } from "@/lib/eden";
+
+function getEntriesQueryKey<T extends string | null>(sessionId: T) {
+  return ["entries", sessionId] as const;
+}
 
 export function useRedisEntries() {
   // Query client
   const queryClient = useQueryClient();
 
   // Get session ID from URL parameters
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get(SESSION_ID_PARAM_NAME);
+  const { getSessionIdParam } = useSessionParam();
+  const sessionId = getSessionIdParam();
 
   // Query to fetch entries
   const entriesQuery = useQuery({
-    queryKey: ["entries", sessionId],
+    queryKey: getEntriesQueryKey(sessionId),
     queryFn: async () => {
       if (!sessionId) {
         throw new Error("Session ID is required");
       }
 
       const res = await eden.api.redis.entries.get({
-        query: { [SESSION_ID_PARAM_NAME]: sessionId },
+        query: { sessionId },
       });
 
       if (res.data) {
@@ -48,7 +51,7 @@ export function useRedisEntries() {
       image,
     }: {
       text: string;
-      ttl?: number;
+      ttl: number;
       image?: File | null;
     }) => {
       if (!sessionId) {
@@ -57,7 +60,7 @@ export function useRedisEntries() {
 
       const res = await eden.api.redis.entries.post(
         { text, ttl, image },
-        { query: { [SESSION_ID_PARAM_NAME]: sessionId } }
+        { query: { sessionId } }
       );
 
       if (res.data) {
@@ -87,9 +90,11 @@ export function useRedisEntries() {
         throw new Error("Session ID is required");
       }
 
-      const res = await eden.api.redis.entries({ id }).delete(undefined, {
-        query: { [SESSION_ID_PARAM_NAME]: sessionId },
-      });
+      const res = await eden.api.redis
+        .entries({ entryId: id })
+        .delete(undefined, {
+          query: { sessionId },
+        });
 
       if (res.data) {
         return res.data;
@@ -113,7 +118,7 @@ export function useRedisEntries() {
 
   // Refresh the entries query
   function refresh() {
-    queryClient.invalidateQueries({ queryKey: ["entries", sessionId] });
+    queryClient.invalidateQueries({ queryKey: getEntriesQueryKey(sessionId) });
   }
 
   return {
