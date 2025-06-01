@@ -32,7 +32,7 @@ export function EntriesTable() {
             disabled={isFetching}
           >
             <RefreshCw
-              className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
+              className={`w-4 h-4 mr-1 ${isFetching ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext } from "react";
 
 import { SESSION_ID_PARAM_NAME } from "@/lib/constants";
 
@@ -27,10 +27,10 @@ export function SessionParamProvider({
     router.push(`/?${SESSION_ID_PARAM_NAME}=${newSessionId}`);
   }
 
-  const sessionIdParam = useMemo(() => sessionId, [sessionId]);
-
   return (
-    <SessionParamContext.Provider value={{ sessionIdParam, setSessionIdParam }}>
+    <SessionParamContext.Provider
+      value={{ sessionIdParam: sessionId, setSessionIdParam }}
+    >
       {children}
     </SessionParamContext.Provider>
   );

@@ -48,21 +48,16 @@ export function SessionCard() {
     }
   }
 
-  // Handle refresh
-  function handleRefresh() {
+  // Handle new session
+  function handleNewSession() {
     const uuid = uuidv4();
     setSessionIdState(uuid);
     setSessionIdParam(uuid);
     toast.success("New session created!");
   }
 
-  // Redis entries management utils (for updating the entries table on session ID changes)
-  const { refresh: refreshEntries, onlineCount } = useRedisEntries();
-
-  // Update the entries table when the session ID changes
-  useEffect(() => {
-    refreshEntries();
-  }, [sessionIdParam]);
+  // Get current online count
+  const { onlineCount } = useRedisEntries();
 
   // Handle copy
   async function handleCopy() {
@@ -90,7 +85,7 @@ export function SessionCard() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleRefresh}
+            onClick={handleNewSession}
             className="flex-shrink-0 cursor-pointer"
           >
             <Plus className="size-4 mr-1" />
