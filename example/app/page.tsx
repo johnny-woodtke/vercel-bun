@@ -23,17 +23,16 @@ type HomePageProps = {
 };
 
 export default async function Home({ searchParams }: HomePageProps) {
-  // Get session ID from search params
-  const sessionId = (await searchParams).sessionId;
+  // Get session ID from search params and member ID from cookies
+  const [sessionId, memberId] = await Promise.all([
+    searchParams.then((params) => params.sessionId),
+    cookies().then((cookies) => cookies.get(MEMBER_ID_COOKIE_NAME)?.value),
+  ]);
 
   // Redirect if session ID is not provided
   if (typeof sessionId !== "string") {
     redirect(`/?${SESSION_ID_PARAM_NAME}=${uuidv4()}`);
   }
-
-  // Get member ID from cookies
-  const cookieStore = await cookies();
-  const memberId = cookieStore.get(MEMBER_ID_COOKIE_NAME)?.value;
 
   // Fetch entries from API
   const res = await eden.api.redis.entries.get({
