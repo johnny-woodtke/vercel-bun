@@ -221,6 +221,8 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
           message: "Entry deleted successfully",
         };
       } catch (error) {
+        console.error("Failed to delete entry:", error);
+
         set.status = 500;
         return {
           error: "Failed to delete entry",
