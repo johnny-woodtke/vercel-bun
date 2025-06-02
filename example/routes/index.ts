@@ -45,43 +45,74 @@ export const app = new Elysia({ prefix: "/api" })
       // Set custom header
       set.headers["x-custom-header"] = "test-value";
 
-      // Define response object
-      const response = {
-        200: { message: "OK" },
-        201: { message: "Created" },
-        400: { error: "Bad Request" },
-        401: { error: "Unauthorized" },
-        403: { error: "Forbidden" },
-        404: { error: "Not Found" },
-        500: { error: "Internal Server Error" },
-      } as const;
-
       // Return response based on status code
-      set.status = statusCode;
-      if (statusCode in response) {
-        return response[statusCode as keyof typeof response];
+      if (statusCode === 200) {
+        set.status = 200;
+        return { message: "OK" };
       }
+
+      if (statusCode === 201) {
+        set.status = 201;
+        return { message: "Created" };
+      }
+
+      if (statusCode === 400) {
+        set.status = 400;
+        return { error: "Bad Request" };
+      }
+
+      if (statusCode === 404) {
+        set.status = 404;
+        return { error: "Not Found" };
+      }
+
+      if (statusCode === 500) {
+        set.status = 500;
+        return { error: "Internal Server Error" };
+      }
+
+      set.status = statusCode;
       return { message: `Status ${statusCode}` };
     },
     {
       params: t.Object({
         code: t.String(),
       }),
-      response: t.Union([
-        t.Object({
+      response: {
+        200: t.Object({
+          message: t.Literal("OK"),
+        }),
+        201: t.Object({
+          message: t.Literal("Created"),
+        }),
+        400: t.Object({
+          error: t.Union([
+            t.Literal("Bad Request"),
+            t.Literal("Invalid status code. Must be between 100-599"),
+          ]),
+        }),
+        401: t.Object({
+          error: t.Literal("Unauthorized"),
+        }),
+        403: t.Object({
+          error: t.Literal("Forbidden"),
+        }),
+        404: t.Object({
+          error: t.Literal("Not Found"),
+        }),
+        500: t.Object({
+          error: t.Literal("Internal Server Error"),
+        }),
+        default: t.Object({
           message: t.String(),
         }),
-        t.Object({
-          error: t.String(),
-        }),
-      ]),
+      },
     }
   )
 
   .post(
     "/files",
     async ({ body, set }) => {
-      set.status = 201;
       set.headers["location"] = "/api/files/123";
       return {
         id: 123,

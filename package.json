@@ -10,7 +10,10 @@
     "typescript",
     "javascript",
     "elysia",
-    "nextjs"
+    "nextjs",
+    "redis",
+    "s3",
+    "r2"
   ],
   "author": "Johnny Woodtke",
   "license": "MIT",

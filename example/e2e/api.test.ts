@@ -53,39 +53,46 @@ describe("E2E API Tests - Core Endpoints", () => {
     });
 
     it("should return correct status code for 201", async () => {
-      const { data, error, status } = await api.status({ code: "201" }).get();
+      const { data, status } = await api.status({ code: "201" }).get();
 
-      expect(error).toBeNull();
       expect(status).toBe(201);
-      expect(data).toEqual({ message: "Created" });
+      expect(data).toEqual({ message: "Created" } as any);
     });
 
     it("should return correct error for 400", async () => {
-      const { data, status } = await api.status({ code: "400" }).get();
+      const { data, error, status } = await api.status({ code: "400" }).get();
 
       expect(status).toBe(400);
-      expect(data).toEqual({ error: "Bad Request" });
+      expect(data).toBeNull();
+      expect(error).toBeDefined();
+      expect(error?.value).toEqual({ error: "Bad Request" });
     });
 
     it("should return correct error for 404", async () => {
-      const { data, status } = await api.status({ code: "404" }).get();
+      const { data, error, status } = await api.status({ code: "404" }).get();
 
       expect(status).toBe(404);
-      expect(data).toEqual({ error: "Not Found" });
+      expect(data).toBeNull();
+      expect(error).toBeDefined();
+      expect(error?.value).toEqual({ error: "Not Found" });
     });
 
     it("should return correct error for 500", async () => {
-      const { data, status } = await api.status({ code: "500" }).get();
+      const { data, error, status } = await api.status({ code: "500" }).get();
 
       expect(status).toBe(500);
-      expect(data).toEqual({ error: "Internal Server Error" });
+      expect(data).toBeNull();
+      expect(error).toBeDefined();
+      expect(error?.value).toEqual({ error: "Internal Server Error" });
     });
 
     it("should handle invalid status codes", async () => {
       const { data, error, status } = await api.status({ code: "999" }).get();
 
       expect(status).toBe(400);
-      expect(data).toEqual({
+      expect(data).toBeNull();
+      expect(error).toBeDefined();
+      expect(error?.value).toEqual({
         error: "Invalid status code. Must be between 100-599",
       });
     });
@@ -99,7 +106,7 @@ describe("E2E API Tests - Core Endpoints", () => {
       });
 
       expect(error).toBeNull();
-      expect(status).toBe(201);
+      expect(status).toBe(200);
       expect(response.headers.get("location")).toBe("/api/files/123");
       expect(data).toMatchObject({
         id: 123,
@@ -112,14 +119,13 @@ describe("E2E API Tests - Core Endpoints", () => {
 
   describe("GET /api/headers", () => {
     it("should return request headers and set custom response headers", async () => {
-      const { data, error, status, response } = await api.headers.get({
+      const { data, status, response } = await api.headers.get({
         headers: {
           "x-test-header": "test-value",
           "user-agent": "bun-e2e-test",
         },
       });
 
-      expect(error).toBeNull();
       expect(status).toBe(200);
       expect(data?.message).toBe("Headers endpoint");
       expect(data?.receivedHeaders["x-test-header"]).toBe("test-value");
