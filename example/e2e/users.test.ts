@@ -39,23 +39,18 @@ describe("E2E API Tests - Users Endpoints", () => {
     });
 
     it("should validate required fields", async () => {
-      const response = await fetch(`${PRODUCTION_DOMAIN}/api/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: "John Doe" }), // Missing email
-      });
+      const { data, error, status } = await api.users.post({
+        name: "John Doe",
+      } as any); // Missing email
 
-      expect(response.status).toBe(422);
+      expect(status).toBe(422);
+      expect(error).toBeDefined();
     });
   });
 
   describe("OPTIONS /api/users/:id", () => {
     it("should return correct CORS headers for valid user ID", async () => {
-      const response = await fetch(`${PRODUCTION_DOMAIN}/api/users/123`, {
-        method: "OPTIONS",
-      });
+      const { response } = await api.users({ id: "123" }).options();
 
       expect(response.status).toBe(200);
       expect(response.headers.get("access-control-allow-origin")).toBe("*");
@@ -69,12 +64,9 @@ describe("E2E API Tests - Users Endpoints", () => {
     });
 
     it("should return 400 for invalid user ID", async () => {
-      const response = await fetch(`${PRODUCTION_DOMAIN}/api/users/invalid`, {
-        method: "OPTIONS",
-      });
+      const { data, status } = await api.users({ id: "invalid" }).options();
 
-      expect(response.status).toBe(400);
-      const data = await response.json();
+      expect(status).toBe(400);
       expect(data).toEqual({ error: "Invalid user ID" });
     });
   });
@@ -93,7 +85,9 @@ describe("E2E API Tests - Users Endpoints", () => {
         name: "John Doe",
         email: "john@example.com",
       });
-      expect(data.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect((data as any).createdAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      );
     });
 
     it("should return 400 for invalid user ID", async () => {
@@ -123,7 +117,9 @@ describe("E2E API Tests - Users Endpoints", () => {
         name: updateData.name,
         email: updateData.email,
       });
-      expect(data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect((data as any).updatedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      );
     });
 
     it("should return 400 for invalid user ID", async () => {
@@ -141,15 +137,12 @@ describe("E2E API Tests - Users Endpoints", () => {
     });
 
     it("should validate required fields", async () => {
-      const response = await fetch(`${PRODUCTION_DOMAIN}/api/users/123`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: "Jane Smith" }), // Missing email
-      });
+      const { data, error, status } = await api.users({ id: "123" }).put({
+        name: "Jane Smith",
+      } as any); // Missing email
 
-      expect(response.status).toBe(422);
+      expect(status).toBe(422);
+      expect(error).toBeDefined();
     });
   });
 
@@ -171,7 +164,9 @@ describe("E2E API Tests - Users Endpoints", () => {
         name: patchData.name,
         email: "john@example.com", // Should keep existing email
       });
-      expect(data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect((data as any).updatedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      );
     });
 
     it("should update only email", async () => {
@@ -191,7 +186,9 @@ describe("E2E API Tests - Users Endpoints", () => {
         name: "John Doe", // Should keep existing name
         email: patchData.email,
       });
-      expect(data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect((data as any).updatedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      );
     });
 
     it("should update both name and email", async () => {
@@ -212,7 +209,9 @@ describe("E2E API Tests - Users Endpoints", () => {
         name: patchData.name,
         email: patchData.email,
       });
-      expect(data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect((data as any).updatedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      );
     });
 
     it("should return 400 for invalid user ID", async () => {
@@ -253,9 +252,7 @@ describe("E2E API Tests - Users Endpoints", () => {
 
   describe("HEAD /api/users/:id", () => {
     it("should return correct headers for existing user", async () => {
-      const response = await fetch(`${PRODUCTION_DOMAIN}/api/users/123`, {
-        method: "HEAD",
-      });
+      const { response } = await api.users({ id: "123" }).head();
 
       expect(response.status).toBe(200);
       expect(response.headers.get("x-user-exists")).toBe("true");
@@ -264,9 +261,7 @@ describe("E2E API Tests - Users Endpoints", () => {
     });
 
     it("should return 404 for invalid user ID", async () => {
-      const response = await fetch(`${PRODUCTION_DOMAIN}/api/users/invalid`, {
-        method: "HEAD",
-      });
+      const { response } = await api.users({ id: "invalid" }).head();
 
       expect(response.status).toBe(404);
     });
@@ -303,22 +298,12 @@ describe("E2E API Tests - Users Endpoints", () => {
       expect(deleteResponse.status).toBe(204);
 
       // Test HEAD
-      const headResponse = await fetch(
-        `${PRODUCTION_DOMAIN}/api/users/${userId}`,
-        {
-          method: "HEAD",
-        }
-      );
-      expect(headResponse.status).toBe(200);
+      const headResponse = await api.users({ id: userId }).head();
+      expect(headResponse.response.status).toBe(200);
 
       // Test OPTIONS
-      const optionsResponse = await fetch(
-        `${PRODUCTION_DOMAIN}/api/users/${userId}`,
-        {
-          method: "OPTIONS",
-        }
-      );
-      expect(optionsResponse.status).toBe(200);
+      const optionsResponse = await api.users({ id: userId }).options();
+      expect(optionsResponse.response.status).toBe(200);
     });
   });
 });

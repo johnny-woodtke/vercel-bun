@@ -43,29 +43,26 @@ describe("E2E API Tests - S3/R2 Integration", () => {
       const testImage = createTestImageFile("test-upload.jpg", 2048);
       const formData = createImageFormData(testImage, "Test image upload");
 
-      const response = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${TEST_MEMBER_ID}`,
-          },
-          body: formData,
-        }
-      );
+      const { data: result, status } = await api.redis.entries.post(formData, {
+        query: {
+          sessionId: TEST_SESSION_ID,
+        },
+        headers: {
+          Cookie: `memberId=${TEST_MEMBER_ID}`,
+        },
+      });
 
-      expect(response.status).toBe(200);
+      expect(status).toBe(200);
 
-      const result = await response.json();
-      expect(result.data).toMatchObject({
+      expect(result?.data).toMatchObject({
         text: "Test image upload",
         ttl: 120,
         memberId: TEST_MEMBER_ID,
       });
-      expect(result.data.imageUrl).toBeDefined();
-      expect(result.data.imageUrl).toMatch(/^https?:\/\//);
-      expect(result.data.id).toBeDefined();
-      expect(result.data.createdAt).toMatch(
+      expect(result?.data?.imageUrl).toBeDefined();
+      expect(result?.data?.imageUrl).toMatch(/^https?:\/\//);
+      expect(result?.data?.id).toBeDefined();
+      expect(result?.data?.createdAt).toMatch(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
       );
     });
@@ -74,23 +71,20 @@ describe("E2E API Tests - S3/R2 Integration", () => {
       const testImage = createTestImageFile("no-text-image.png", 1536);
       const formData = createImageFormData(testImage); // No text provided
 
-      const response = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${TEST_MEMBER_ID}`,
-          },
-          body: formData,
-        }
-      );
+      const { data: result, status } = await api.redis.entries.post(formData, {
+        query: {
+          sessionId: TEST_SESSION_ID,
+        },
+        headers: {
+          Cookie: `memberId=${TEST_MEMBER_ID}`,
+        },
+      });
 
-      expect(response.status).toBe(200);
+      expect(status).toBe(200);
 
-      const result = await response.json();
-      expect(result.data.imageUrl).toBeDefined();
-      expect(result.data.imageUrl).toMatch(/^https?:\/\//);
-      expect(result.data.text).toBeUndefined();
+      expect(result?.data?.imageUrl).toBeDefined();
+      expect(result?.data?.imageUrl).toMatch(/^https?:\/\//);
+      expect(result?.data?.text).toBeUndefined();
     });
 
     it("should handle different image file types", async () => {
@@ -111,27 +105,27 @@ describe("E2E API Tests - S3/R2 Integration", () => {
           `Test ${imageType.type} upload`
         );
 
-        const response = await fetch(
-          `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
+        const { data: result, status } = await api.redis.entries.post(
+          formData,
           {
-            method: "POST",
+            query: {
+              sessionId: TEST_SESSION_ID,
+            },
             headers: {
               Cookie: `memberId=${TEST_MEMBER_ID}`,
             },
-            body: formData,
           }
         );
 
-        expect(response.status).toBe(200);
+        expect(status).toBe(200);
 
-        const result = await response.json();
-        expect(result.data.imageUrl).toBeDefined();
-        expect(result.data.imageUrl).toMatch(/^https?:\/\//);
+        expect(result?.data?.imageUrl).toBeDefined();
+        expect(result?.data?.imageUrl).toMatch(/^https?:\/\//);
 
         // URL should contain the session ID and have proper file extension
-        expect(result.data.imageUrl).toContain(TEST_SESSION_ID);
+        expect(result?.data?.imageUrl).toContain(TEST_SESSION_ID);
         const expectedExtension = imageType.name.split(".").pop();
-        expect(result.data.imageUrl).toContain(`.${expectedExtension}`);
+        expect(result?.data?.imageUrl).toContain(`.${expectedExtension}`);
       }
     });
 
@@ -140,22 +134,19 @@ describe("E2E API Tests - S3/R2 Integration", () => {
       const largeImage = createTestImageFile("large-image.jpg", 100 * 1024);
       const formData = createImageFormData(largeImage, "Large image test");
 
-      const response = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${TEST_MEMBER_ID}`,
-          },
-          body: formData,
-        }
-      );
+      const { data: result, status } = await api.redis.entries.post(formData, {
+        query: {
+          sessionId: TEST_SESSION_ID,
+        },
+        headers: {
+          Cookie: `memberId=${TEST_MEMBER_ID}`,
+        },
+      });
 
-      expect(response.status).toBe(200);
+      expect(status).toBe(200);
 
-      const result = await response.json();
-      expect(result.data.imageUrl).toBeDefined();
-      expect(result.data.imageUrl).toMatch(/^https?:\/\//);
+      expect(result?.data?.imageUrl).toBeDefined();
+      expect(result?.data?.imageUrl).toMatch(/^https?:\/\//);
     });
 
     it("should generate unique file names for each upload", async () => {
@@ -166,22 +157,22 @@ describe("E2E API Tests - S3/R2 Integration", () => {
         const testImage = createTestImageFile(`duplicate-test-${i}.jpg`, 1024);
         const formData = createImageFormData(testImage, `Duplicate test ${i}`);
 
-        const response = await fetch(
-          `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
+        const { data: result, status } = await api.redis.entries.post(
+          formData,
           {
-            method: "POST",
+            query: {
+              sessionId: TEST_SESSION_ID,
+            },
             headers: {
               Cookie: `memberId=${TEST_MEMBER_ID}`,
             },
-            body: formData,
           }
         );
 
-        expect(response.status).toBe(200);
+        expect(status).toBe(200);
 
-        const result = await response.json();
-        expect(result.data.imageUrl).toBeDefined();
-        uploadedUrls.push(result.data.imageUrl);
+        expect(result?.data?.imageUrl).toBeDefined();
+        uploadedUrls.push(result?.data?.imageUrl || "");
       }
 
       // All URLs should be unique
@@ -201,278 +192,209 @@ describe("E2E API Tests - S3/R2 Integration", () => {
         "Accessibility test image"
       );
 
-      const response = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${TEST_MEMBER_ID}`,
-          },
-          body: formData,
-        }
-      );
+      const { data: result } = await api.redis.entries.post(formData, {
+        query: {
+          sessionId: TEST_SESSION_ID,
+        },
+        headers: {
+          Cookie: `memberId=${TEST_MEMBER_ID}`,
+        },
+      });
 
-      const result = await response.json();
-      uploadedImageUrl = result.data.imageUrl;
+      uploadedImageUrl = result?.data?.imageUrl || "";
     });
 
     it("should make uploaded images publicly accessible", async () => {
       expect(uploadedImageUrl).toBeDefined();
+      expect(uploadedImageUrl.length).toBeGreaterThan(0);
 
       const imageResponse = await fetch(uploadedImageUrl);
       expect(imageResponse.status).toBe(200);
+      expect(imageResponse.headers.get("content-type")).toMatch(/^image\//);
+    });
 
-      const contentType = imageResponse.headers.get("content-type");
-      expect(contentType).toMatch(/^image\//);
+    it("should return proper image content", async () => {
+      const imageResponse = await fetch(uploadedImageUrl);
+      expect(imageResponse.status).toBe(200);
 
-      // Should be able to read the image data
       const imageBuffer = await imageResponse.arrayBuffer();
       expect(imageBuffer.byteLength).toBeGreaterThan(0);
-    });
-
-    it("should have proper cache headers for images", async () => {
-      const imageResponse = await fetch(uploadedImageUrl);
-      expect(imageResponse.status).toBe(200);
-
-      // Check for cache-friendly headers
-      const cacheControl = imageResponse.headers.get("cache-control");
-      const lastModified = imageResponse.headers.get("last-modified");
-      const etag = imageResponse.headers.get("etag");
-
-      // Images should have some form of caching for CDN efficiency
-      console.log(`Image cache headers:`, {
-        cacheControl,
-        lastModified,
-        etag,
-      });
-
-      // At least one caching header should be present
-      const hasCacheHeaders = cacheControl || lastModified || etag;
-      if (!hasCacheHeaders) {
-        console.warn(
-          "No cache headers found on uploaded image - this may impact CDN performance"
-        );
-      }
+      expect(imageBuffer.byteLength).toBe(2048); // Should match our test file size
     });
   });
 
-  describe("S3 Integration Error Handling", () => {
-    it("should handle file upload failures gracefully", async () => {
-      // This test would ideally test what happens when S3 is unavailable
-      // For now, we'll test with an extremely large file that might fail
-      const oversizedFile = createTestImageFile(
-        "oversized.jpg",
-        50 * 1024 * 1024
-      ); // 50MB
-      const formData = createImageFormData(
-        oversizedFile,
-        "Oversized file test"
-      );
-
-      const response = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${TEST_MEMBER_ID}`,
-          },
-          body: formData,
-        }
-      );
-
-      // Should either succeed or fail gracefully with proper error message
-      if (response.status !== 200) {
-        expect(response.status).toBeOneOf([400, 413, 500]);
-
-        const result = await response.json();
-        expect(result.error).toBeDefined();
-        expect(typeof result.error).toBe("string");
-      }
-    });
-  });
-
-  describe("Image Metadata and Organization", () => {
-    it("should organize images by session ID", async () => {
-      const session1 = `img-session-1-${uuidv4()}`;
-      const session2 = `img-session-2-${uuidv4()}`;
-      const memberId = `img-member-${uuidv4()}`;
-
-      // Upload image to session 1
-      const image1 = createTestImageFile("session1-image.jpg", 1024);
-      const formData1 = createImageFormData(image1, "Session 1 image");
-
-      const response1 = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${session1}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${memberId}`,
-          },
-          body: formData1,
-        }
-      );
-
-      expect(response1.status).toBe(200);
-      const result1 = await response1.json();
-
-      // Upload image to session 2
-      const image2 = createTestImageFile("session2-image.jpg", 1024);
-      const formData2 = createImageFormData(image2, "Session 2 image");
-
-      const response2 = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${session2}`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: `memberId=${memberId}`,
-          },
-          body: formData2,
-        }
-      );
-
-      expect(response2.status).toBe(200);
-      const result2 = await response2.json();
-
-      // Images should be organized by session in their URLs
-      expect(result1.data.imageUrl).toContain(session1);
-      expect(result2.data.imageUrl).toContain(session2);
-
-      // URLs should be different
-      expect(result1.data.imageUrl).not.toBe(result2.data.imageUrl);
-    });
-
-    it("should preserve file extensions in uploaded URLs", async () => {
-      const testCases = [
-        { name: "test.jpg", expectedExt: "jpg" },
-        { name: "test.png", expectedExt: "png" },
-        { name: "test.gif", expectedExt: "gif" },
-        { name: "image.jpeg", expectedExt: "jpeg" },
-      ];
-
-      for (const testCase of testCases) {
-        const buffer = new ArrayBuffer(1024);
-        const file = new File([buffer], testCase.name, { type: "image/jpeg" });
-        const formData = createImageFormData(
-          file,
-          `Extension test for ${testCase.name}`
-        );
-
-        const response = await fetch(
-          `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-          {
-            method: "POST",
-            headers: {
-              Cookie: `memberId=${TEST_MEMBER_ID}`,
-            },
-            body: formData,
-          }
-        );
-
-        expect(response.status).toBe(200);
-
-        const result = await response.json();
-        expect(result.data.imageUrl).toContain(`.${testCase.expectedExt}`);
-      }
-    });
-  });
-
-  describe("S3 Integration Performance", () => {
+  describe("S3/R2 Storage Integration", () => {
     it("should handle concurrent image uploads", async () => {
-      const sessionId = `perf-img-session-${uuidv4()}`;
-      const memberId = `perf-img-member-${uuidv4()}`;
-
+      const numUploads = 3;
       const uploadPromises = [];
-      const numUploads = 3; // Keep it reasonable for E2E tests
 
       for (let i = 0; i < numUploads; i++) {
         const testImage = createTestImageFile(`concurrent-${i}.jpg`, 1024);
-        const formData = createImageFormData(
-          testImage,
-          `Concurrent upload ${i}`
-        );
+        const formData = createImageFormData(testImage, `Concurrent ${i}`);
 
-        const promise = fetch(
-          `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${sessionId}`,
-          {
-            method: "POST",
-            headers: {
-              Cookie: `memberId=${memberId}`,
-            },
-            body: formData,
-          }
-        );
+        const promise = api.redis.entries.post(formData, {
+          query: {
+            sessionId: TEST_SESSION_ID,
+          },
+          headers: {
+            Cookie: `memberId=${TEST_MEMBER_ID}`,
+          },
+        });
 
         uploadPromises.push(promise);
       }
 
-      const responses = await Promise.all(uploadPromises);
+      const results = await Promise.all(uploadPromises);
 
       // All uploads should succeed
-      for (const response of responses) {
-        expect(response.status).toBe(200);
+      for (const result of results) {
+        expect(result.status).toBe(200);
+        expect(result.data?.data?.imageUrl).toBeDefined();
       }
 
-      // Verify all images were uploaded and have unique URLs
-      const results = await Promise.all(responses.map((r) => r.json()));
-      const imageUrls = results.map((r) => r.data.imageUrl);
+      // All URLs should be different
+      const imageUrls = results
+        .map((r) => r.data?.data?.imageUrl)
+        .filter(Boolean);
       const uniqueUrls = new Set(imageUrls);
-
       expect(uniqueUrls.size).toBe(numUploads);
-
-      // All images should be accessible
-      const accessibilityPromises = imageUrls.map((url) => fetch(url));
-      const accessibilityResponses = await Promise.all(accessibilityPromises);
-
-      for (const response of accessibilityResponses) {
-        expect(response.status).toBe(200);
-      }
     });
-  });
 
-  describe("Entry Deletion and Image Cleanup", () => {
-    it("should handle entry deletion (image cleanup is implementation dependent)", async () => {
-      // Upload an image
-      const testImage = createTestImageFile("deletion-test.jpg", 1024);
-      const formData = createImageFormData(testImage, "Deletion test image");
+    it("should isolate images between different sessions", async () => {
+      const session1 = `s3-session-1-${uuidv4()}`;
+      const session2 = `s3-session-2-${uuidv4()}`;
+      const memberId = `s3-member-${uuidv4()}`;
 
-      const uploadResponse = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "POST",
+      // Upload to session 1
+      const image1 = createTestImageFile("session1-image.jpg", 1024);
+      const formData1 = createImageFormData(image1, "Session 1 image");
+
+      const { data: result1 } = await api.redis.entries.post(formData1, {
+        query: {
+          sessionId: session1,
+        },
+        headers: {
+          Cookie: `memberId=${memberId}`,
+        },
+      });
+
+      // Upload to session 2
+      const image2 = createTestImageFile("session2-image.jpg", 1024);
+      const formData2 = createImageFormData(image2, "Session 2 image");
+
+      const { data: result2 } = await api.redis.entries.post(formData2, {
+        query: {
+          sessionId: session2,
+        },
+        headers: {
+          Cookie: `memberId=${memberId}`,
+        },
+      });
+
+      // Both uploads should succeed and have different URLs
+      expect(result1?.data?.imageUrl).toBeDefined();
+      expect(result2?.data?.imageUrl).toBeDefined();
+      expect(result1?.data?.imageUrl).not.toBe(result2?.data?.imageUrl);
+
+      // URLs should contain their respective session IDs
+      expect(result1?.data?.imageUrl).toContain(session1);
+      expect(result2?.data?.imageUrl).toContain(session2);
+    });
+
+    it("should handle image upload errors gracefully", async () => {
+      // Test with oversized file (this should fail based on API limits)
+      const oversizedImage = createTestImageFile(
+        "oversized.jpg",
+        50 * 1024 * 1024
+      ); // 50MB
+      const formData = createImageFormData(oversizedImage, "Oversized test");
+
+      const { status } = await api.redis.entries.post(formData, {
+        query: {
+          sessionId: TEST_SESSION_ID,
+        },
+        headers: {
+          Cookie: `memberId=${TEST_MEMBER_ID}`,
+        },
+      });
+
+      // Should return an error status (likely 413 for payload too large or 400 for validation)
+      expect([400, 413, 422]).toContain(status);
+    });
+
+    it("should ensure uploaded images are accessible via HTTP", async () => {
+      const imageUrls: string[] = [];
+
+      // Upload multiple images
+      for (let i = 0; i < 3; i++) {
+        const testImage = createTestImageFile(`http-test-${i}.jpg`, 1024);
+        const formData = createImageFormData(testImage, `HTTP test ${i}`);
+
+        const { data: result } = await api.redis.entries.post(formData, {
+          query: {
+            sessionId: TEST_SESSION_ID,
+          },
           headers: {
             Cookie: `memberId=${TEST_MEMBER_ID}`,
           },
-          body: formData,
+        });
+
+        if (result?.data?.imageUrl) {
+          imageUrls.push(result.data.imageUrl);
         }
-      );
+      }
 
-      expect(uploadResponse.status).toBe(200);
+      // Test HTTP accessibility of all uploaded images
+      const accessibilityPromises = imageUrls.map((url) => fetch(url));
+      const responses = await Promise.all(accessibilityPromises);
 
-      const uploadResult = await uploadResponse.json();
-      const entryId = uploadResult.data.id;
-      const imageUrl = uploadResult.data.imageUrl;
+      for (const response of responses) {
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toMatch(/^image\//);
+      }
+    });
+
+    it("should handle image deletion when entry is deleted", async () => {
+      // Upload an image
+      const testImage = createTestImageFile("deletion-test.jpg", 1024);
+      const formData = createImageFormData(testImage, "Deletion test");
+
+      const { data: uploadResult } = await api.redis.entries.post(formData, {
+        query: {
+          sessionId: TEST_SESSION_ID,
+        },
+        headers: {
+          Cookie: `memberId=${TEST_MEMBER_ID}`,
+        },
+      });
+
+      const entryId = uploadResult?.data?.id;
+      const imageUrl = uploadResult?.data?.imageUrl;
+
+      expect(entryId).toBeDefined();
+      expect(imageUrl).toBeDefined();
 
       // Verify image is accessible
-      const initialImageResponse = await fetch(imageUrl);
+      const initialImageResponse = await fetch(imageUrl || "");
       expect(initialImageResponse.status).toBe(200);
 
       // Delete the entry
-      const deleteResponse = await fetch(
-        `${PRODUCTION_DOMAIN}/api/redis/entries/${entryId}?sessionId=${TEST_SESSION_ID}`,
-        {
-          method: "DELETE",
+      const { status: deleteStatus } = await api.redis
+        .entries({ entryId: entryId || "" })
+        .delete({
+          query: {
+            sessionId: TEST_SESSION_ID,
+          },
           headers: {
             Cookie: `memberId=${TEST_MEMBER_ID}`,
           },
-        }
-      );
+        });
 
-      expect(deleteResponse.status).toBe(200);
+      expect(deleteStatus).toBe(200);
 
-      // Note: Whether the image is automatically cleaned up from S3 is implementation dependent
-      // This test just verifies the entry deletion works
-      const deleteResult = await deleteResponse.json();
-      expect(deleteResult.message).toBe("Entry deleted successfully");
+      // Note: Image cleanup might be asynchronous, so we can't immediately test
+      // for image deletion. In a production scenario, you might want to test
+      // this with a delay or check that a cleanup job was scheduled.
     });
   });
 });
