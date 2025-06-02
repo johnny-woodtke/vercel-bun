@@ -9,10 +9,12 @@ export const contentRoutes = new Elysia({ prefix: "/content" })
       return { message: "JSON response", timestamp: new Date().toISOString() };
     },
     {
-      response: t.Object({
-        message: t.String(),
-        timestamp: t.String(),
-      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+          timestamp: t.String(),
+        }),
+      },
     }
   )
 
@@ -23,7 +25,9 @@ export const contentRoutes = new Elysia({ prefix: "/content" })
       return "Plain text response";
     },
     {
-      response: t.String(),
+      response: {
+        200: t.String(),
+      },
     }
   )
 
@@ -34,7 +38,9 @@ export const contentRoutes = new Elysia({ prefix: "/content" })
       return "<html><body><h1>HTML Response</h1></body></html>";
     },
     {
-      response: t.String(),
+      response: {
+        200: t.String(),
+      },
     }
   )
 
@@ -45,6 +51,8 @@ export const contentRoutes = new Elysia({ prefix: "/content" })
       return '<?xml version="1.0"?><root><message>XML response</message></root>';
     },
     {
-      response: t.String(),
+      response: {
+        200: t.String(),
+      },
     }
   );

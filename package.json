@@ -15,7 +15,9 @@
     "s3",
     "r2"
   ],
-  "author": "Johnny Woodtke",
+  "author": {
+    "name": "Johnny Woodtke"
+  },
   "license": "MIT",
   "homepage": "https://github.com/johnny-woodtke/vercel-bun",
   "repository": {
