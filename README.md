@@ -104,7 +104,19 @@ See the [example](./example) directory for a complete example of using this runt
 
 ## Next Steps
 
+- [ ] **E2E Tests**: E2E tests for the [example](./example) project.
+    - Query the production deployment.
+    - Use built-in bun testing tools.
+    - Use Eden to ensure type safety.
+    - Test all methods (GET, POST, PATCH...), status codes, CDN caching, body, dynamic path, query params, headers, cookies, and content types.
+    - Test Redis and S3 integrations.
+    - Ensure these are runnable in GitHub Actions.
 - [ ] **Performance Benchmarks**: Create performance comparisons between Bun and Node.js runtimes.
+    - [bench](./bench) directory with two functions: `/api/bun.ts` and `/api/node.ts`. Both functions should perform the same operations.
+    - Write a script to query the production API routes.
+    - Query Vercel logs to compile perf metrics (removes "over-the-wire" time).
+    - Record warmed-up metrics (and cold-start metrics, if possible)
+    - Ensure script is runnable in GitHub Actions.
 - [ ] **Framework Examples**: Add more framework examples (Hono, Fastify, etc.).
 
 ## Goals
