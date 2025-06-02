@@ -34,7 +34,8 @@
     "build": "rm -rf dist && tsc && cp -r src/bootstrap src/runtime dist",
     "check-types": "tsc --noEmit",
     "build:vercel": "bunx vercel build",
-    "pull:vercel": "bunx vercel pull"
+    "pull:vercel": "bunx vercel pull",
+    "e2e": "bun test example/e2e"
   },
   "dependencies": {
     "jszip": "^3.10.1"

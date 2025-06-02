@@ -33,34 +33,35 @@ export const app = new Elysia({ prefix: "/api" })
   .get(
     "/status/:code",
     ({ params, set }) => {
-      const statusCode = parseInt(params.code);
+      // Validate status code
+      const statusCode = parseInt(params.code, 10);
 
       // Validate status code range
-      if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
+      if (Number.isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
         set.status = 400;
         return { error: "Invalid status code. Must be between 100-599" };
       }
 
-      set.status = statusCode;
+      // Set custom header
       set.headers["x-custom-header"] = "test-value";
-      switch (statusCode) {
-        case 200:
-          return { message: "OK" };
-        case 201:
-          return { message: "Created" };
-        case 400:
-          return { error: "Bad Request" };
-        case 401:
-          return { error: "Unauthorized" };
-        case 403:
-          return { error: "Forbidden" };
-        case 404:
-          return { error: "Not Found" };
-        case 500:
-          return { error: "Internal Server Error" };
-        default:
-          return { message: `Status ${statusCode}` };
+
+      // Define response object
+      const response = {
+        200: { message: "OK" },
+        201: { message: "Created" },
+        400: { error: "Bad Request" },
+        401: { error: "Unauthorized" },
+        403: { error: "Forbidden" },
+        404: { error: "Not Found" },
+        500: { error: "Internal Server Error" },
+      } as const;
+
+      // Return response based on status code
+      set.status = statusCode;
+      if (statusCode in response) {
+        return response[statusCode as keyof typeof response];
       }
+      return { message: `Status ${statusCode}` };
     },
     {
       params: t.Object({

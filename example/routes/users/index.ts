@@ -42,7 +42,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     ({ set, params }) => {
       const userId = parseInt(params.id);
 
-      if (isNaN(userId)) {
+      if (Number.isNaN(userId)) {
         set.status = 400;
         return { error: "Invalid user ID" };
       }
@@ -72,7 +72,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     ({ params, set }) => {
       const userId = parseInt(params.id);
 
-      if (isNaN(userId)) {
+      if (Number.isNaN(userId)) {
         set.status = 400;
         return { error: "Invalid user ID" };
       }
@@ -107,7 +107,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     ({ params, body, set }) => {
       const userId = parseInt(params.id);
 
-      if (isNaN(userId)) {
+      if (Number.isNaN(userId)) {
         set.status = 400;
         return { error: "Invalid user ID" };
       }
@@ -146,7 +146,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     ({ params, body, set }) => {
       const userId = parseInt(params.id);
 
-      if (isNaN(userId)) {
+      if (Number.isNaN(userId)) {
         set.status = 400;
         return { error: "Invalid user ID" };
       }
@@ -220,7 +220,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     ({ params, set }) => {
       const userId = parseInt(params.id);
 
-      if (isNaN(userId)) {
+      if (Number.isNaN(userId)) {
         set.status = 404;
         return;
       }
