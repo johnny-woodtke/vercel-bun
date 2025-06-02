@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bun Runtime Demo",
   description:
-      "Store session-scoped data with Redis and handle file uploads with S3—all powered by Bun's native APIs.",
+    "Store session-scoped data with Redis and handle file uploads with S3—all powered by Bun's native APIs.",
 };
 
 type RootLayoutParams = {
