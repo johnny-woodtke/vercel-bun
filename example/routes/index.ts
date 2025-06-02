@@ -13,13 +13,16 @@ export const app = new Elysia({ prefix: "/api" })
       credentials: true,
     })
   )
+  .use(cacheControl())
 
   .use(redisRoutes)
   .use(usersRoutes)
   .use(contentRoutes)
 
   .get("/", () => `Hello from bun@${Bun.version}`, {
-    response: t.String(),
+    response: {
+      200: t.String(),
+    },
   })
 
   .get("/hello", ({ query }) => `Hello ${query.firstName} ${query.lastName}`, {
@@ -27,7 +30,9 @@ export const app = new Elysia({ prefix: "/api" })
       firstName: t.String(),
       lastName: t.String(),
     }),
-    response: t.String(),
+    response: {
+      200: t.String(),
+    },
   })
 
   .get(
@@ -126,12 +131,14 @@ export const app = new Elysia({ prefix: "/api" })
         filename: t.String(),
         content: t.String(),
       }),
-      response: t.Object({
-        id: t.Number(),
-        filename: t.String(),
-        size: t.Number(),
-        uploadedAt: t.String(),
-      }),
+      response: {
+        200: t.Object({
+          id: t.Number(),
+          filename: t.String(),
+          size: t.Number(),
+          uploadedAt: t.String(),
+        }),
+      },
     }
   )
 
@@ -146,13 +153,12 @@ export const app = new Elysia({ prefix: "/api" })
       };
     },
     {
-      response: t.Object({
-        receivedHeaders: t.Record(
-          t.String(),
-          t.Union([t.String(), t.Undefined()])
-        ),
-        message: t.String(),
-      }),
+      response: {
+        200: t.Object({
+          receivedHeaders: t.Record(t.String(), t.Any()),
+          message: t.String(),
+        }),
+      },
     }
   )
 
@@ -170,13 +176,14 @@ export const app = new Elysia({ prefix: "/api" })
       return { message: "Cookies set successfully" };
     },
     {
-      response: t.Object({
-        message: t.String(),
-      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+        }),
+      },
     }
   )
 
-  .use(cacheControl())
   .get(
     "/cache",
     ({ cacheControl }) => {
@@ -191,9 +198,11 @@ export const app = new Elysia({ prefix: "/api" })
       };
     },
     {
-      response: t.Object({
-        message: t.String(),
-        timestamp: t.String(),
-      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+          timestamp: t.String(),
+        }),
+      },
     }
   );
