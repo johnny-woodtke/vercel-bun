@@ -43,7 +43,7 @@ export const paramsRoutes = new Elysia({ prefix: "/params" })
   .post(
     "/path/:id",
     ({ params }) => ({
-      receivedId: params.id,
+      receivedPath: params,
     }),
     {
       params: t.Object({
@@ -51,7 +51,9 @@ export const paramsRoutes = new Elysia({ prefix: "/params" })
       }),
       response: {
         200: t.Object({
-          receivedId: t.String(),
+          receivedPath: t.Object({
+            id: t.String(),
+          }),
         }),
       },
     }

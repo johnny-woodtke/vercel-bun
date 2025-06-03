@@ -67,7 +67,6 @@ describe("E2E API Tests - Redis Integration", () => {
     it("should validate that either text or image is provided", async () => {
       const entryData = {
         ttl: 120,
-        // No text or image provided
       };
 
       const { data, error, status } = await api.redis.entries.post(entryData, {
@@ -84,7 +83,7 @@ describe("E2E API Tests - Redis Integration", () => {
 
     it("should validate text length limits", async () => {
       const entryData = {
-        text: "x".repeat(1001), // Exceeds MAX_TEXT_LENGTH of 1000
+        text: "x".repeat(1001),
         ttl: 120,
       };
 
@@ -94,7 +93,7 @@ describe("E2E API Tests - Redis Integration", () => {
         },
       });
 
-      expect(status).toBe(422); // Validation error
+      expect(status).toBe(422);
     });
 
     it("should require member ID cookie", async () => {
@@ -111,7 +110,7 @@ describe("E2E API Tests - Redis Integration", () => {
         },
       });
 
-      expect(status).toBe(422); // Missing required cookie
+      expect(status).toBe(422);
     });
   });
 

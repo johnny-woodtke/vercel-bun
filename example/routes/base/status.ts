@@ -2,9 +2,9 @@ import { Elysia, t } from "elysia";
 
 export const statusRoutes = new Elysia({ prefix: "/status" })
 
-  .post("/200", () => "OK", {
+  .post("/200", () => "OK" as const, {
     response: {
-      200: t.String(),
+      200: t.Literal("OK"),
     },
   })
 
@@ -16,7 +16,7 @@ export const statusRoutes = new Elysia({ prefix: "/status" })
     },
     {
       response: {
-        400: t.String(),
+        400: t.Literal("Bad Request"),
       },
     }
   )
@@ -29,7 +29,7 @@ export const statusRoutes = new Elysia({ prefix: "/status" })
     },
     {
       response: {
-        404: t.String(),
+        404: t.Literal("Not Found"),
       },
     }
   )
@@ -42,20 +42,7 @@ export const statusRoutes = new Elysia({ prefix: "/status" })
     },
     {
       response: {
-        405: t.String(),
-      },
-    }
-  )
-
-  .post(
-    "/422",
-    ({ set }) => {
-      set.status = 422;
-      return "Unprocessable Entity";
-    },
-    {
-      response: {
-        422: t.String(),
+        405: t.Literal("Method Not Allowed"),
       },
     }
   )
@@ -68,7 +55,7 @@ export const statusRoutes = new Elysia({ prefix: "/status" })
     },
     {
       response: {
-        429: t.String(),
+        429: t.Literal("Too Many Requests"),
       },
     }
   )
@@ -81,7 +68,7 @@ export const statusRoutes = new Elysia({ prefix: "/status" })
     },
     {
       response: {
-        500: t.String(),
+        500: t.Literal("Internal Server Error"),
       },
     }
   );

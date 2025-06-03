@@ -25,3 +25,22 @@ export function getApiClient(withMemberId = true) {
     }),
   }).api;
 }
+
+type CreateTestImageFileParams = {
+  name: string;
+  size: number;
+};
+
+export function createTestImageFile({ name, size }: CreateTestImageFileParams) {
+  // Create a simple image-like binary data
+  const buffer = new ArrayBuffer(size);
+  const view = new Uint8Array(buffer);
+
+  // Fill with some pattern to simulate image data
+  for (let i = 0; i < size; i++) {
+    view[i] = i % 256;
+  }
+
+  const file = new File([buffer], name, { type: "image/jpeg" });
+  return file;
+}

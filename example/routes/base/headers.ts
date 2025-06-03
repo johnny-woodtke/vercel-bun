@@ -15,7 +15,7 @@ export const headersRoutes = new Elysia({ prefix: "/headers" })
     {
       response: {
         200: t.Object({
-          message: t.String(),
+          message: t.Literal("Cache control header set"),
           timestamp: t.Number(),
         }),
       },
@@ -35,8 +35,8 @@ export const headersRoutes = new Elysia({ prefix: "/headers" })
     {
       response: {
         200: t.Object({
-          headerName: t.String(),
-          message: t.String(),
+          headerName: t.Literal("x-custom-header"),
+          message: t.Literal("Custom header set"),
         }),
       },
     }
@@ -58,14 +58,14 @@ export const headersRoutes = new Elysia({ prefix: "/headers" })
 
       return {
         cookieName,
-        message: `Cookie ${cookieName} set`,
+        message: "Cookie set",
       };
     },
     {
       response: {
         200: t.Object({
-          cookieName: t.String(),
-          message: t.String(),
+          cookieName: t.Literal("x-elysia-cookie"),
+          message: t.Literal("Cookie set"),
         }),
       },
     }
