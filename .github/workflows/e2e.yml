@@ -28,7 +28,7 @@ jobs:
       - name: Run E2E tests
         run: bun run e2e
         env:
-          E2E_API_DOMAIN: ${{ inputs.api_domain || 'https://vercel-bun-nine.vercel.app' }}
+          E2E_EXAMPLE_API_DOMAIN: ${{ inputs.api_domain || 'https://vercel-bun-nine.vercel.app' }}
 
       - name: Report test results
         if: always()

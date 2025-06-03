@@ -53,34 +53,11 @@ A complete image upload system demonstrating:
 
 ## API Endpoints
 
-The `/api` route demonstrates a wide range of serverless function capabilities:
+TODO: Fill this in with API endpoints information
 
-### Core Endpoints
+## E2E Tests
 
-- `GET /api` - Basic hello world with Bun version
-- `GET /api/hello?firstName=John&lastName=Doe` - Query parameter handling
-- `GET /api/users/:id` - Path parameters and validation
-- `GET /api/status/:code` - Custom status codes and headers
-- `POST /api/users` - Request body handling
-- `PUT /api/users/:id` - Full resource updates
-- `PATCH /api/users/:id` - Partial resource updates
-- `DELETE /api/users/:id` - Resource deletion
-- `HEAD /api/users/:id` - Metadata responses
-- `OPTIONS /api/users` - CORS preflight handling
-
-### Redis Demo Endpoints
-
-- `POST /api/redis/entries` - Add a new entry to the current session
-- `GET /api/redis/entries` - Retrieve all entries for the current session
-- `DELETE /api/redis/entries/:id` - Delete a specific entry
-
-### Content Type Examples
-
-- `/api/content/json`, `/api/content/text`, `/api/content/html`, `/api/content/xml`
-
-### Advanced Features
-
-- `/api/headers`, `/api/cookies`, `/api/cache`
+TODO: Fill this in with E2E test information
 
 ## Getting Started
 
