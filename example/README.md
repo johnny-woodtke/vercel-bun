@@ -53,11 +53,270 @@ A complete image upload system demonstrating:
 
 ## API Endpoints
 
-TODO: Fill this in with API endpoints information
+The example includes a comprehensive REST API built with [Elysia](https://elysiajs.com/) demonstrating various features:
+
+### Root Endpoints
+
+| Method | Endpoint     | Description                     | Response                         |
+| ------ | ------------ | ------------------------------- | -------------------------------- |
+| `GET`  | `/api`       | Basic greeting with Bun version | `"Hello from bun@{version}"`     |
+| `GET`  | `/api/hello` | Personalized greeting           | `"Hello {firstName} {lastName}"` |
+
+**Query Parameters for `/api/hello`:**
+
+- `firstName` (string, required)
+- `lastName` (string, required)
+
+### Base Routes (`/api/base/*`)
+
+Comprehensive examples showcasing HTTP fundamentals:
+
+#### Content Types (`/api/base/content/*`)
+
+| Method | Endpoint                 | Content-Type       | Description           |
+| ------ | ------------------------ | ------------------ | --------------------- |
+| `GET`  | `/api/base/content/json` | `application/json` | JSON response example |
+| `GET`  | `/api/base/content/text` | `text/plain`       | Plain text response   |
+| `GET`  | `/api/base/content/html` | `text/html`        | HTML response         |
+| `GET`  | `/api/base/content/xml`  | `application/xml`  | XML response          |
+
+#### HTTP Methods (`/api/base/methods/*`)
+
+| Method    | Endpoint                    | Description             |
+| --------- | --------------------------- | ----------------------- |
+| `GET`     | `/api/base/methods/get`     | GET request example     |
+| `POST`    | `/api/base/methods/post`    | POST request example    |
+| `PATCH`   | `/api/base/methods/patch`   | PATCH request example   |
+| `PUT`     | `/api/base/methods/put`     | PUT request example     |
+| `DELETE`  | `/api/base/methods/delete`  | DELETE request example  |
+| `OPTIONS` | `/api/base/methods/options` | OPTIONS request example |
+| `HEAD`    | `/api/base/methods/head`    | HEAD request example    |
+
+#### Parameters (`/api/base/params/*`)
+
+| Method | Endpoint                    | Description                | Body Schema               |
+| ------ | --------------------------- | -------------------------- | ------------------------- |
+| `POST` | `/api/base/params/body`     | Request body validation    | `{ name: string }`        |
+| `POST` | `/api/base/params/query`    | Query parameter validation | Query: `{ name: string }` |
+| `POST` | `/api/base/params/path/:id` | Path parameter validation  | Path: `{ id: string }`    |
+
+#### Custom Headers & Cookies (`/api/base/headers/*`)
+
+| Method | Endpoint                          | Description            | Headers Set                         |
+| ------ | --------------------------------- | ---------------------- | ----------------------------------- |
+| `GET`  | `/api/base/headers/cache-control` | Cache control header   | `cache-control: public, max-age=60` |
+| `GET`  | `/api/base/headers/custom`        | Custom header example  | `x-custom-header: test`             |
+| `GET`  | `/api/base/headers/cookie`        | Set cookie example     | Sets `x-elysia-cookie`              |
+| `POST` | `/api/base/headers/cookie`        | Receive cookie example | Expects `x-test-cookie`             |
+
+#### Status Codes (`/api/base/status/*`)
+
+| Method | Endpoint               | Status Code | Description           |
+| ------ | ---------------------- | ----------- | --------------------- |
+| `POST` | `/api/base/status/200` | 200         | OK response           |
+| `POST` | `/api/base/status/400` | 400         | Bad Request           |
+| `POST` | `/api/base/status/404` | 404         | Not Found             |
+| `POST` | `/api/base/status/405` | 405         | Method Not Allowed    |
+| `POST` | `/api/base/status/429` | 429         | Too Many Requests     |
+| `POST` | `/api/base/status/500` | 500         | Internal Server Error |
+
+### Redis Routes (`/api/redis/*`)
+
+Session-based data storage with automatic expiration:
+
+#### Entries Management
+
+| Method   | Endpoint                      | Description                   | Authentication                         |
+| -------- | ----------------------------- | ----------------------------- | -------------------------------------- |
+| `POST`   | `/api/redis/entries`          | Create new entry (text/image) | Requires `memberId` cookie             |
+| `GET`    | `/api/redis/entries`          | Get all entries for session   | Requires `memberId` cookie             |
+| `DELETE` | `/api/redis/entries/:entryId` | Delete specific entry         | Requires `memberId` cookie + ownership |
+
+**Required Parameters:**
+
+- **Cookie**: `memberId` (string) - Session member identifier
+- **Query**: `sessionId` (string) - Session identifier
+
+**POST `/api/redis/entries` Body Schema:**
+
+```typescript
+{
+  text?: string;        // Max 1000 characters
+  ttl: number | string; // 10-300 seconds
+  image?: File;         // Max 5MB, jpg/jpeg/png/gif/webp
+}
+```
+
+**Entry Response Schema:**
+
+```typescript
+{
+  id: string;
+  text?: string;
+  imageUrl?: string;
+  ttl: number;
+  memberId: string;
+  createdAt: string;
+}
+```
+
+**GET `/api/redis/entries` Response:**
+
+```typescript
+{
+  data: Entry[];
+  onlineCount: number;  // Active members in session
+}
+```
+
+#### Features:
+
+- **Session-scoped data**: Each session maintains separate entries
+- **Auto-expiring entries**: TTL-based cleanup (10-300 seconds)
+- **Image upload**: Direct upload to Cloudflare R2 with public URLs
+- **Online member tracking**: Real-time count of active session members
+- **Ownership validation**: Members can only delete their own entries
+- **File validation**: Size limits, type checking, and metadata storage
 
 ## E2E Tests
 
-TODO: Fill this in with E2E test information
+Comprehensive end-to-end testing suite using Bun's built-in test runner covering all API functionality:
+
+### Test Structure
+
+The E2E tests are organized into three main suites:
+
+#### 1. Base Route Tests (`base.test.ts`)
+
+**Coverage**: HTTP fundamentals and Elysia framework features
+
+- **Content Type Tests** (`/api/base/content/*`)
+
+  - JSON response formatting and headers
+  - Plain text response handling
+  - HTML content type validation
+  - XML response structure and headers
+
+- **HTTP Method Tests** (`/api/base/methods/*`)
+
+  - All HTTP methods: GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD
+  - Response validation for each method
+  - Proper status code handling
+
+- **Parameter Validation Tests** (`/api/base/params/*`)
+
+  - Request body validation with type checking
+  - Query parameter processing and validation
+  - Path parameter extraction and validation
+  - Error handling for invalid parameters (422 status codes)
+
+- **Headers & Cookies Tests** (`/api/base/headers/*`)
+
+  - Cache-control header setting and validation
+  - Custom header management
+  - Cookie setting with security attributes
+  - Cookie reception and validation
+  - Proper error handling for missing cookies
+
+- **Status Code Tests** (`/api/base/status/*`)
+  - Custom status code responses (200, 400, 404, 405, 429, 500)
+  - Proper error message formatting
+
+#### 2. Redis Integration Tests (`redis.test.ts`)
+
+**Coverage**: Session-based storage, TTL management, and online tracking
+
+- **Entry Creation Tests** (`POST /api/redis/entries`)
+
+  - Text entry creation with TTL validation
+  - Image upload with file validation
+  - TTL conversion from string to number
+  - Validation that either text or image is required
+  - Text length limits (max 1000 characters)
+  - TTL range validation (10-300 seconds)
+  - Member ID cookie requirement
+
+- **Entry Retrieval Tests** (`GET /api/redis/entries`)
+
+  - Session-scoped entry listing
+  - Online member count tracking
+  - Proper data structure validation
+  - Authentication requirements
+
+- **Entry Deletion Tests** (`DELETE /api/redis/entries/:entryId`)
+
+  - Ownership validation (members can only delete own entries)
+  - Entry existence validation (404 for missing entries)
+  - Proper authorization (403 for non-owners)
+  - Successful deletion confirmation
+
+- **Session Management**
+  - Automatic member tracking and online status
+  - Session isolation (entries don't leak between sessions)
+  - TTL-based automatic cleanup validation
+
+#### 3. S3/R2 Storage Tests (`s3.test.ts`)
+
+**Coverage**: Cloudflare R2 integration and file upload functionality
+
+- **Image Upload Tests**
+
+  - Successful upload with public URL generation
+  - File accessibility validation via HTTP requests
+  - Proper content-type headers for uploaded images
+  - File size validation in response headers
+
+- **File Validation Tests**
+
+  - File size limits (max 5MB, returns 422/413 for oversized files)
+  - File type validation (only image types allowed)
+  - Proper error responses for invalid files
+
+- **Integration Tests**
+  - End-to-end flow: upload → storage → public access
+  - Metadata preservation and URL generation
+  - Error handling for upload failures
+
+### Test Utilities (`utils.ts`)
+
+- **API Client Setup**: Type-safe Eden Treaty client with cookie management
+- **Test Data Generation**: Helper functions for creating test images and files
+- **Session Management**: Consistent session ID generation for test isolation
+- **Authentication**: Automatic member ID cookie handling
+
+### Test Features
+
+- **Type Safety**: Full TypeScript integration with Eden Treaty for compile-time API validation
+- **Isolation**: Each test uses unique session IDs to prevent interference
+- **Authentication**: Automatic cookie management for authenticated endpoints
+- **File Testing**: Binary file upload testing with validation
+- **Error Handling**: Comprehensive error scenario testing with proper status codes
+- **Real Integration**: Tests against actual Redis and R2 services (not mocked)
+
+### Running Tests
+
+```bash
+# Start development server
+bun run dev:api
+
+# Run all E2E tests
+bun test e2e
+
+# Run specific test suites
+bun test e2e/base.test.ts      # Base functionality
+bun test e2e/redis.test.ts     # Redis integration
+bun test e2e/s3.test.ts        # S3/R2 storage
+
+# Run with coverage
+bun test --coverage
+```
+
+**Test Environment Requirements:**
+
+- E2E_EXAMPLE_API_DOMAIN environment variable configured to domain of server (i.e., `http://localhost:3000`)
+- Redis instance (local or remote via `REDIS_URL`)
+- Cloudflare R2 bucket with proper credentials
+- All environment variables configured as per setup instructions
 
 ## Getting Started
 
