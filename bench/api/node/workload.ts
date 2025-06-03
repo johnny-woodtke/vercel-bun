@@ -1,5 +1,7 @@
 export async function POST(req: Request): Promise<Response> {
-  const arr = Array.from({ length: 100_000 }, (_, i) => i);
+  const arr = Array.from({ length: 100_000 }, () =>
+    Math.floor(Math.random() * 100)
+  );
 
   const result = arr
     .filter((x) => x % 2 === 0)
