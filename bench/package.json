@@ -5,10 +5,28 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "vercel:build": "bunx vercel build",
-    "vercel:pull": "bunx vercel pull"
+    "vercel:pull": "bunx vercel pull",
+    "bench:all": "bun run benchmarks/run-all.ts",
+    "bench:cold-start": "bun run benchmarks/cold-start.ts",
+    "bench:warm": "k6 run benchmarks/warm-latency.ts",
+    "bench:throughput": "k6 run benchmarks/throughput.ts",
+    "bench:concurrency": "k6 run benchmarks/concurrency.ts",
+    "bench:payload": "k6 run benchmarks/payload-size.ts",
+    "bench:burst": "k6 run benchmarks/burst-traffic.ts",
+    "bench:error": "k6 run benchmarks/error-handling.ts",
+    "bench:consistency": "bun run benchmarks/consistency.ts",
+    "bench:compare": "bun run benchmarks/compare-results.ts"
+  },
+  "dependencies": {
+    "autocannon": "^7.12.0",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "table": "^6.8.1"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/k6": "^1.0.2",
+    "@types/node": "^22.15.0"
   },
   "peerDependencies": {
     "typescript": "^5"
