@@ -3,7 +3,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "vercel:build": "bunx vercel build",
+    "vercel:pull": "bunx vercel pull"
   },
   "devDependencies": {
     "@types/bun": "latest"
