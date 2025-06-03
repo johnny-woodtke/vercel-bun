@@ -13,7 +13,9 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       set.headers["access-control-max-age"] = "86400";
     },
     {
-      response: t.Void(),
+      response: {
+        200: t.Void(),
+      },
     }
   )
 
@@ -27,13 +29,15 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         name: t.String(),
         email: t.String(),
       }),
-      response: t.Object({
-        success: t.Boolean(),
-        data: t.Object({
-          name: t.String(),
-          email: t.String(),
+      response: {
+        200: t.Object({
+          success: t.Boolean(),
+          data: t.Object({
+            name: t.String(),
+            email: t.String(),
+          }),
         }),
-      }),
+      },
     }
   )
 
@@ -58,12 +62,10 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       params: t.Object({
         id: t.String(),
       }),
-      response: t.Union([
-        t.Object({
-          error: t.String(),
-        }),
-        t.Void(),
-      ]),
+      response: {
+        200: t.Void(),
+        400: t.Object({ error: t.String() }),
+      },
     }
   )
 
@@ -88,17 +90,15 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       params: t.Object({
         id: t.String(),
       }),
-      response: t.Union([
-        t.Object({
+      response: {
+        200: t.Object({
           id: t.Number(),
           name: t.String(),
           email: t.String(),
           createdAt: t.String(),
         }),
-        t.Object({
-          error: t.String(),
-        }),
-      ]),
+        400: t.Object({ error: t.String() }),
+      },
     }
   )
 
@@ -127,17 +127,15 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         name: t.String(),
         email: t.String(),
       }),
-      response: t.Union([
-        t.Object({
+      response: {
+        200: t.Object({
           id: t.Number(),
           name: t.String(),
           email: t.String(),
           updatedAt: t.String(),
         }),
-        t.Object({
-          error: t.String(),
-        }),
-      ]),
+        400: t.Object({ error: t.String() }),
+      },
     }
   )
 
@@ -176,17 +174,15 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         name: t.Optional(t.String()),
         email: t.Optional(t.String()),
       }),
-      response: t.Union([
-        t.Object({
+      response: {
+        200: t.Object({
           id: t.Number(),
           name: t.String(),
           email: t.String(),
           updatedAt: t.String(),
         }),
-        t.Object({
-          error: t.String(),
-        }),
-      ]),
+        400: t.Object({ error: t.String() }),
+      },
     }
   )
 
@@ -199,19 +195,15 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         set.status = 400;
         return { error: "Invalid user ID" };
       }
-
-      set.status = 204;
     },
     {
       params: t.Object({
         id: t.String(),
       }),
-      response: t.Union([
-        t.Object({
-          error: t.String(),
-        }),
-        t.Void(),
-      ]),
+      response: {
+        200: t.Void(),
+        400: t.Object({ error: t.String() }),
+      },
     }
   )
 
@@ -233,6 +225,8 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       params: t.Object({
         id: t.String(),
       }),
-      response: t.Void(),
+      response: {
+        200: t.Void(),
+      },
     }
   );

@@ -64,10 +64,10 @@ describe("E2E API Tests - Users Endpoints", () => {
     });
 
     it("should return 400 for invalid user ID", async () => {
-      const { data, status } = await api.users({ id: "invalid" }).options();
+      const { error, status } = await api.users({ id: "invalid" }).options();
 
       expect(status).toBe(400);
-      expect(data).toEqual({ error: "Invalid user ID" });
+      expect(error?.value).toMatchObject({ error: "Invalid user ID" });
     });
   });
 
@@ -91,10 +91,10 @@ describe("E2E API Tests - Users Endpoints", () => {
     });
 
     it("should return 400 for invalid user ID", async () => {
-      const { data, error, status } = await api.users({ id: "invalid" }).get();
+      const { error, status } = await api.users({ id: "invalid" }).get();
 
       expect(status).toBe(400);
-      expect(data).toEqual({ error: "Invalid user ID" });
+      expect(error?.value).toMatchObject({ error: "Invalid user ID" });
     });
   });
 
@@ -128,12 +128,12 @@ describe("E2E API Tests - Users Endpoints", () => {
         email: "jane.smith@example.com",
       };
 
-      const { data, error, status } = await api
+      const { error, status } = await api
         .users({ id: "invalid" })
         .put(updateData);
 
       expect(status).toBe(400);
-      expect(data).toEqual({ error: "Invalid user ID" });
+      expect(error?.value).toMatchObject({ error: "Invalid user ID" });
     });
 
     it("should validate required fields", async () => {
@@ -219,12 +219,12 @@ describe("E2E API Tests - Users Endpoints", () => {
         name: "Test Name",
       };
 
-      const { data, error, status } = await api
+      const { error, status } = await api
         .users({ id: "invalid" })
         .patch(patchData);
 
       expect(status).toBe(400);
-      expect(data).toEqual({ error: "Invalid user ID" });
+      expect(error?.value).toMatchObject({ error: "Invalid user ID" });
     });
   });
 
@@ -236,17 +236,15 @@ describe("E2E API Tests - Users Endpoints", () => {
         .delete();
 
       expect(error).toBeNull();
-      expect(status).toBe(204);
-      expect(data).toBeUndefined();
+      expect(status).toBe(200);
+      expect(data).toBeFalsy();
     });
 
     it("should return 400 for invalid user ID", async () => {
-      const { data, error, status } = await api
-        .users({ id: "invalid" })
-        .delete();
+      const { error, status } = await api.users({ id: "invalid" }).delete();
 
       expect(status).toBe(400);
-      expect(data).toEqual({ error: "Invalid user ID" });
+      expect(error?.value).toMatchObject({ error: "Invalid user ID" });
     });
   });
 
@@ -295,7 +293,7 @@ describe("E2E API Tests - Users Endpoints", () => {
 
       // Test DELETE
       const deleteResponse = await api.users({ id: userId }).delete();
-      expect(deleteResponse.status).toBe(204);
+      expect(deleteResponse.status).toBe(200);
 
       // Test HEAD
       const headResponse = await api.users({ id: userId }).head();
