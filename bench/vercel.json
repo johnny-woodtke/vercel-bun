@@ -5,7 +5,7 @@
       "runtime": "@godsreveal/vercel-bun@0.1.1"
     },
     "api/node/route.ts": {
-      "runtime": "nodejs"
+      "runtime": "nodejs@22.10.0"
     }
   }
 }
