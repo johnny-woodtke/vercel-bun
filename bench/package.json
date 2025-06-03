@@ -13,9 +13,7 @@
     "bench:concurrency": "k6 run benchmarks/concurrency.ts",
     "bench:payload": "k6 run benchmarks/payload-size.ts",
     "bench:burst": "k6 run benchmarks/burst-traffic.ts",
-    "bench:error": "k6 run benchmarks/error-handling.ts",
-    "bench:consistency": "bun run benchmarks/consistency.ts",
-    "bench:compare": "bun run benchmarks/compare-results.ts"
+    "bench:error": "k6 run benchmarks/error-handling.ts"
   },
   "dependencies": {
     "autocannon": "^7.12.0",
