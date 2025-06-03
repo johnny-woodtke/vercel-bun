@@ -167,13 +167,13 @@ function compareResults(
   const comparisons: ComparisonResult[] = [];
 
   const testTypes = [
-    "cold-start",
-    "warm-latency",
-    "throughput",
-    "concurrency",
-    "payload-size",
     "burst-traffic",
+    "cold-start",
+    "concurrency",
     "error-handling",
+    "payload-size",
+    "throughput",
+    "warm-latency",
   ];
 
   for (const testType of testTypes) {
@@ -387,13 +387,13 @@ async function runAllBenchmarks(): Promise<void> {
 
   const config = getConfig();
   const testTypes = [
-    "cold-start",
-    "warm-latency",
-    "throughput",
-    "concurrency",
-    "payload-size",
     "burst-traffic",
+    "cold-start",
+    "concurrency",
     "error-handling",
+    "payload-size",
+    "throughput",
+    "warm-latency",
   ];
 
   Logger.info(`Base URL: ${config.baseUrl}`);

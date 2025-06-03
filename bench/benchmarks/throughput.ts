@@ -1,6 +1,6 @@
+import { check } from "k6";
 import http from "k6/http";
-import { check, sleep } from "k6";
-import { Counter, Rate, Trend } from "k6/metrics";
+import { Rate, Trend } from "k6/metrics";
 
 // Custom metrics
 const errorRate = new Rate("error_rate");
@@ -93,8 +93,8 @@ export default function () {
 }
 
 export function handleSummary(data: any) {
-  const endpoint_name = endpoint.replace("/api/", "");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const endpoint_name = endpoint.replace("/api/", "").replace("/", "-");
+  const timestamp = new Date().getTime();
 
   // Helper function to safely get metric values
   const safeMetric = (value: any, fallback: number = 0): number => {

@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
 export interface BenchmarkResult {
