@@ -1,0 +1,41 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_domain:
+        description: "API domain for E2E tests"
+        required: false
+        default: "https://vercel-bun-nine.vercel.app"
+        type: string
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run E2E tests
+        run: bun run e2e
+        env:
+          E2E_API_DOMAIN: ${{ inputs.api_domain || 'https://vercel-bun-nine.vercel.app' }}
+
+      - name: Report test results
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ E2E tests passed successfully"
+          else
+            echo "❌ E2E tests failed"
+            exit 1
+          fi
