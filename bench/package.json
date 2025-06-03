@@ -1,0 +1,13 @@
+{
+  "name": "bench",
+  "private": true,
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
