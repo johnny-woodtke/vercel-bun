@@ -29,13 +29,3 @@ jobs:
         run: bun run e2e
         env:
           E2E_EXAMPLE_API_DOMAIN: ${{ inputs.api_domain || 'https://vercel-bun-nine.vercel.app' }}
-
-      - name: Report test results
-        if: always()
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "✅ E2E tests passed successfully"
-          else
-            echo "❌ E2E tests failed"
-            exit 1
-          fi
