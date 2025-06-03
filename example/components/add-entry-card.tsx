@@ -19,15 +19,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useRedisEntries } from "@/hooks/use-redis-entries";
-import { MAX_TEXT_LENGTH, MAX_TTL, MIN_TTL } from "@/lib/constants";
-
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-];
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_IMAGE_SIZE,
+  MAX_TEXT_LENGTH,
+  MAX_TTL,
+  MIN_TTL,
+} from "@/lib/constants";
 
 // Custom validation for File objects
 const fileSchema = z

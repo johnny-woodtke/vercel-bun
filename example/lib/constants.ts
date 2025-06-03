@@ -9,3 +9,12 @@ export const MIN_TTL = 10;
 export const MAX_TTL = 300;
 
 export const MAX_TEXT_LENGTH = 1000;
+
+export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
+export const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];

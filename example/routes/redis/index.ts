@@ -2,6 +2,8 @@ import { Elysia, t } from "elysia";
 import { v4 as uuidv4 } from "uuid";
 
 import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_IMAGE_SIZE,
   MAX_TEXT_LENGTH,
   MAX_TTL,
   MEMBER_ID_COOKIE_NAME,
@@ -102,7 +104,14 @@ export const redisRoutes = new Elysia({ prefix: "/redis" })
           t.Number({ minimum: MIN_TTL, maximum: MAX_TTL }),
           t.String(),
         ]),
-        image: t.Optional(t.Nullable(t.File())),
+        image: t.Optional(
+          t.Nullable(
+            t.File({
+              type: ACCEPTED_IMAGE_TYPES,
+              maxSize: MAX_IMAGE_SIZE,
+            })
+          )
+        ),
       }),
       cookie: t.Object({
         [MEMBER_ID_COOKIE_NAME]: t.String(),
