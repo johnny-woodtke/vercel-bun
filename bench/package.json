@@ -1,5 +1,6 @@
 {
   "name": "bench",
+  "type": "module",
   "private": true,
   "scripts": {
     "check-types": "tsc --noEmit"
