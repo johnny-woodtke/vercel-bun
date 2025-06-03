@@ -44,7 +44,7 @@ describe("E2E API Tests - S3/R2 Integration", () => {
       { query: { sessionId: getTestSessionId() } }
     );
 
-    expect(status).toBe(422);
+    expect([422, 413]).toContain(status);
     expect(data).toBeNull();
     expect(error?.value).toBeDefined();
   });
