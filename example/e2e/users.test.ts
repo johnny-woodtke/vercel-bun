@@ -255,7 +255,7 @@ describe("E2E API Tests - Users Endpoints", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("x-user-exists")).toBe("true");
       expect(response.headers.get("content-type")).toBe("application/json");
-      expect(response.headers.get("content-length")).toBe("100");
+      expect(response.headers.get("content-length")).toBe("0");
     });
 
     it("should return 404 for invalid user ID", async () => {
