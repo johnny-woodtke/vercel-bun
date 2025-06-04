@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 import { getConfig } from "./config";
-import { Logger } from "./utils";
+import { Logger, TEST_TYPES } from "./utils";
 
 interface TestResult {
   endpoint: string;
@@ -166,17 +166,7 @@ function compareResults(
 ): ComparisonResult[] {
   const comparisons: ComparisonResult[] = [];
 
-  const testTypes = [
-    "burst-traffic",
-    "cold-start",
-    "concurrency",
-    "error-handling",
-    "payload-size",
-    "throughput",
-    "warm-latency",
-  ];
-
-  for (const testType of testTypes) {
+  for (const testType of TEST_TYPES) {
     const bunResult = bunResults.find(
       (r) => r.testType === testType && r.success
     );
@@ -386,25 +376,16 @@ async function runAllBenchmarks(): Promise<void> {
   console.log(chalk.blue.bold("🧪 STARTING COMPREHENSIVE BENCHMARK SUITE\n"));
 
   const config = getConfig();
-  const testTypes = [
-    "burst-traffic",
-    "cold-start",
-    "concurrency",
-    "error-handling",
-    "payload-size",
-    "throughput",
-    "warm-latency",
-  ];
 
   Logger.info(`Base URL: ${config.baseUrl}`);
-  Logger.info(`Test Types: ${testTypes.join(", ")}`);
+  Logger.info(`Test Types: ${TEST_TYPES.join(", ")}`);
   Logger.info("Starting tests...\n");
 
   const bunResults: TestResult[] = [];
   const nodeResults: TestResult[] = [];
 
   // Run tests for both endpoints
-  for (const testType of testTypes) {
+  for (const testType of TEST_TYPES) {
     console.log(chalk.yellow(`\n🔄 Running ${testType} tests...\n`));
 
     // Run Bun test

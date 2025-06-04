@@ -2,16 +2,24 @@ import { check, sleep } from "k6";
 import http from "k6/http";
 import { Rate, Trend } from "k6/metrics";
 
-// Custom metrics
+import {
+  createBaseSummary,
+  getCommonConfig,
+  logBasicResults,
+  safeMetric,
+  saveResults,
+} from "./k6-utils.ts";
+
+// Configuration using common utilities
+const config = getCommonConfig();
+const { baseUrl, endpoint } = config;
+
+// Custom metrics for error handling tests
 const malformedJsonRate = new Rate("malformed_json_rate");
 const oversizedPayloadRate = new Rate("oversized_payload_rate");
 const invalidHeaderRate = new Rate("invalid_header_rate");
 const errorResponseTime = new Trend("error_response_time");
 const stabilityRate = new Rate("stability_rate");
-
-// Configuration
-const baseUrl: string = __ENV.BASE_URL || "https://vercel-bun-bench.vercel.app";
-const endpoint: string = __ENV.ENDPOINT || "/api/bun";
 
 export const options = {
   scenarios: {
@@ -35,6 +43,18 @@ interface ErrorTestCase {
   headers: Record<string, string>;
   expectedStatus: number[];
   metric: Rate;
+}
+
+// Helper function for generating nested JSON
+function generateNestedJson(depth: number): string {
+  let json = '{"level": 0';
+  for (let i = 1; i < depth; i++) {
+    json += `, "nested${i}": {"level": ${i}`;
+  }
+  for (let i = 0; i < depth; i++) {
+    json += "}";
+  }
+  return json;
 }
 
 // Test data generators
@@ -107,17 +127,6 @@ const errorTestCases: ErrorTestCase[] = [
     metric: malformedJsonRate,
   },
 ];
-
-function generateNestedJson(depth: number): string {
-  let json = '{"level": 0';
-  for (let i = 1; i < depth; i++) {
-    json += `, "nested${i}": {"level": ${i}`;
-  }
-  for (let i = 0; i < depth; i++) {
-    json += "}";
-  }
-  return json;
-}
 
 export default function () {
   const url = `${baseUrl}${endpoint}`;
@@ -222,13 +231,16 @@ export default function () {
 
 export function handleSummary(data: any) {
   const endpoint_name = endpoint.replace("/api/", "").replace("/", "-");
-  const timestamp = new Date().getTime();
 
-  // Helper function to safely get metric values
-  const safeMetric = (value: any, fallback: number = 0): number => {
-    return value !== undefined && value !== null ? value : fallback;
-  };
+  // Create base summary using utility
+  const baseSummary = createBaseSummary(
+    data,
+    "error-handling",
+    endpoint,
+    safeMetric(data.state?.testRunDurationMs)
+  );
 
+  // Calculate error handling specific metrics
   const stabilityRatePercent =
     safeMetric(data.metrics.stability_rate?.values?.rate) * 100;
   const avgErrorResponseTime = safeMetric(
@@ -252,12 +264,9 @@ export function handleSummary(data: any) {
     Object.values(errorTestResults).reduce((sum, rate) => sum + rate, 0) /
     Object.keys(errorTestResults).length;
 
+  // Extended summary with error handling specific data
   const summary = {
-    endpoint: endpoint_name,
-    testType: "error-handling",
-    timestamp: new Date(),
-    duration: safeMetric(data.state?.testRunDurationMs),
-    totalRequests: safeMetric(data.metrics.http_reqs?.values?.count),
+    ...baseSummary,
     stabilityRate: stabilityRatePercent,
     avgErrorResponseTime: avgErrorResponseTime,
     p95ErrorResponseTime: p95ErrorResponseTime,
@@ -269,36 +278,14 @@ export function handleSummary(data: any) {
     ),
     overallErrorHandling: overallErrorHandling,
     errorTestResults: errorTestResults,
-    requests: safeMetric(data.metrics.http_reqs?.values?.count),
-    avgLatency: safeMetric(data.metrics.http_req_duration?.values?.avg),
-    p95Latency: safeMetric(data.metrics.http_req_duration?.values?.["p(95)"]),
-    p99Latency: safeMetric(data.metrics.http_req_duration?.values?.["p(99)"]),
-    maxLatency: safeMetric(data.metrics.http_req_duration?.values?.max),
-    minLatency: safeMetric(data.metrics.http_req_duration?.values?.min),
-    errors: safeMetric(data.metrics.http_req_failed?.values?.count),
-    errorRate: safeMetric(data.metrics.http_req_failed?.values?.rate) * 100,
-    bytesTransferred:
-      safeMetric(data.metrics.data_received?.values?.count) +
-      safeMetric(data.metrics.data_sent?.values?.count),
     metadata: {
-      iterations: safeMetric(data.metrics.iterations?.values?.count),
-      vus: safeMetric(data.metrics.vus?.values?.max),
-      httpReqBlocked: safeMetric(data.metrics.http_req_blocked?.values?.avg),
-      httpReqConnecting: safeMetric(
-        data.metrics.http_req_connecting?.values?.avg
-      ),
-      httpReqWaiting: safeMetric(data.metrics.http_req_waiting?.values?.avg),
-      httpReqSending: safeMetric(data.metrics.http_req_sending?.values?.avg),
-      httpReqReceiving: safeMetric(
-        data.metrics.http_req_receiving?.values?.avg
-      ),
+      ...baseSummary.metadata,
+      totalRequests: baseSummary.requests,
     },
   };
 
-  // Console output
-  console.log("\n📊 Error Handling Test Results:");
-  console.log(`Endpoint: ${endpoint_name.toUpperCase()}`);
-  console.log(`Total Requests: ${summary.totalRequests}`);
+  // Log results using utility
+  logBasicResults(baseSummary, "Error Handling Test Results");
   console.log(`System Stability Rate: ${summary.stabilityRate.toFixed(2)}%`);
   console.log(
     `Overall Error Handling: ${summary.overallErrorHandling.toFixed(2)}%`
@@ -309,7 +296,6 @@ export function handleSummary(data: any) {
   console.log(
     `P95 Error Response Time: ${summary.p95ErrorResponseTime.toFixed(2)}ms`
   );
-  console.log(`Error Rate: ${summary.errorRate.toFixed(2)}%`);
 
   // Detailed error test results
   console.log("\n🔍 Error Test Details:");
@@ -349,8 +335,6 @@ export function handleSummary(data: any) {
     console.log("   • Error responses are taking too long");
   }
 
-  return {
-    [`results/error-handling-${endpoint_name}-${timestamp}.json`]:
-      JSON.stringify(summary, null, 2),
-  };
+  // Save results using utility
+  return saveResults(summary, `error-handling-${endpoint_name}`);
 }

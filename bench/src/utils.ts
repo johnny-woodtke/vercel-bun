@@ -50,47 +50,18 @@ export class Logger {
   }
 }
 
-export function generatePayload(sizeInBytes: number): string {
-  const data = {
-    id: Math.random().toString(36).substring(2, 15),
-    timestamp: new Date().toISOString(),
-    message: "A".repeat(Math.max(0, sizeInBytes - 100)), // Account for JSON overhead
-    metadata: {
-      size: sizeInBytes,
-      test: true,
-    },
-  };
-
-  const payload = JSON.stringify(data);
-
-  // Adjust payload size to match target
-  if (payload.length < sizeInBytes) {
-    data.message += "A".repeat(sizeInBytes - payload.length);
-  } else if (payload.length > sizeInBytes) {
-    data.message = data.message.substring(
-      0,
-      data.message.length - (payload.length - sizeInBytes)
-    );
-  }
-
-  return JSON.stringify(data);
-}
+export const TEST_TYPES = [
+  "burst-traffic",
+  "cold-start",
+  "concurrency",
+  "error-handling",
+  "payload-size",
+  "throughput",
+  "warm-latency",
+] as const;
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function formatLatency(ms: number): string {
-  if (ms < 1) return `${(ms * 1000).toFixed(2)}μs`;
-  if (ms < 1000) return `${ms.toFixed(2)}ms`;
-  return `${(ms / 1000).toFixed(2)}s`;
-}
-
-export function formatBytes(bytes: number): string {
-  const sizes = ["B", "KB", "MB", "GB"];
-  if (bytes === 0) return "0 B";
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 }
 
 export function saveResult(result: BenchmarkResult, filename?: string) {
@@ -108,22 +79,6 @@ export function saveResult(result: BenchmarkResult, filename?: string) {
 
   writeFileSync(filepath, JSON.stringify(result, null, 2));
   Logger.info(`Results saved to ${filepath}`);
-}
-
-export function calculateStats(latencies: number[]) {
-  if (latencies.length === 0) return null;
-
-  const sorted = [...latencies].sort((a, b) => a - b);
-  const len = sorted.length;
-
-  return {
-    min: sorted[0],
-    max: sorted[len - 1],
-    avg: latencies.reduce((sum, val) => sum + val, 0) / len,
-    p50: sorted[Math.floor(len * 0.5)],
-    p95: sorted[Math.floor(len * 0.95)],
-    p99: sorted[Math.floor(len * 0.99)],
-  };
 }
 
 export async function waitForColdStart(minutes: number) {
