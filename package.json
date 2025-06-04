@@ -40,7 +40,7 @@
     "check-types": "tsc --noEmit",
     "build:vercel": "bunx vercel build",
     "pull:vercel": "bunx vercel pull",
-    "e2e": "bun test example/e2e"
+    "e2e": "bun test example/e2e bench/e2e"
   },
   "dependencies": {
     "jszip": "^3.10.1"
