@@ -6,14 +6,14 @@
     "check-types": "tsc --noEmit",
     "vercel:build": "bunx vercel build",
     "vercel:pull": "bunx vercel pull",
-    "bench:all": "bun run benchmarks/run-all.ts",
-    "bench:cold-start": "bun run benchmarks/cold-start.ts",
-    "bench:warm": "k6 run benchmarks/warm-latency.ts",
-    "bench:throughput": "k6 run benchmarks/throughput.ts",
-    "bench:concurrency": "k6 run benchmarks/concurrency.ts",
-    "bench:payload": "k6 run benchmarks/payload-size.ts",
-    "bench:burst": "k6 run benchmarks/burst-traffic.ts",
-    "bench:error": "k6 run benchmarks/error-handling.ts"
+    "bench:all": "bun run src/run-all.ts",
+    "bench:cold-start": "bun run src/cold-start.ts",
+    "bench:warm": "k6 run src/warm-latency.ts",
+    "bench:throughput": "k6 run src/throughput.ts",
+    "bench:concurrency": "k6 run src/concurrency.ts",
+    "bench:payload": "k6 run src/payload-size.ts",
+    "bench:burst": "k6 run src/burst-traffic.ts",
+    "bench:error": "k6 run src/error-handling.ts"
   },
   "dependencies": {
     "autocannon": "^7.12.0",
