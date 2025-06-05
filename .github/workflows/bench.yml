@@ -15,85 +15,6 @@ on:
         default: "/api/bun"
         type: string
 
-      # Test Duration & Load Configuration
-      duration:
-        description: "Test duration (e.g., 60s, 2m)"
-        required: false
-        default: "60s"
-        type: string
-      rps:
-        description: "Target requests per second"
-        required: false
-        default: "100"
-        type: string
-      max_rps:
-        description: "Maximum requests per second"
-        required: false
-        default: "1000"
-        type: string
-      max_connections:
-        description: "Maximum concurrent connections"
-        required: false
-        default: "1000"
-        type: string
-
-      # Payload Configuration
-      payload_size:
-        description: "Payload size in bytes"
-        required: false
-        default: "1024"
-        type: string
-
-      # Iteration Configuration
-      iterations:
-        description: "Number of iterations"
-        required: false
-        default: "50"
-        type: string
-
-      # Burst Traffic Configuration
-      burst_requests:
-        description: "Number of burst requests"
-        required: false
-        default: "1000"
-        type: string
-      burst_duration:
-        description: "Burst test duration"
-        required: false
-        default: "2s"
-        type: string
-
-      # Ramp Configuration
-      ramp_up_duration:
-        description: "Ramp up duration"
-        required: false
-        default: "2m"
-        type: string
-      sustain_duration:
-        description: "Sustain load duration"
-        required: false
-        default: "3m"
-        type: string
-
-      # Timing Configuration
-      think_time:
-        description: "Think time between requests (seconds)"
-        required: false
-        default: "0"
-        type: string
-
-      # Cold Start Configuration
-      cold_start_wait_time_mins:
-        description: "Cold start wait time in minutes"
-        required: false
-        default: "5"
-        type: string
-      cold_start_iterations:
-        description: "Cold start test iterations"
-        required: false
-        default: "5"
-        type: string
-
       # Test Selection
       run_burst_traffic:
         description: "Run burst traffic test"
@@ -138,19 +59,19 @@ jobs:
     env:
       BENCH_API_DOMAIN: ${{ inputs.bench_api_domain }}
       ENDPOINT: ${{ inputs.endpoint }}
-      DURATION: ${{ inputs.duration }}
-      RPS: ${{ inputs.rps }}
-      MAX_RPS: ${{ inputs.max_rps }}
-      MAX_CONNECTIONS: ${{ inputs.max_connections }}
-      PAYLOAD_SIZE: ${{ inputs.payload_size }}
-      ITERATIONS: ${{ inputs.iterations }}
-      BURST_REQUESTS: ${{ inputs.burst_requests }}
-      BURST_DURATION: ${{ inputs.burst_duration }}
-      RAMP_UP_DURATION: ${{ inputs.ramp_up_duration }}
-      SUSTAIN_DURATION: ${{ inputs.sustain_duration }}
-      THINK_TIME: ${{ inputs.think_time }}
-      COLD_START_WAIT_TIME_MINS: ${{ inputs.cold_start_wait_time_mins }}
-      COLD_START_ITERATIONS: ${{ inputs.cold_start_iterations }}
+      DURATION: "60s"
+      RPS: "100"
+      MAX_RPS: "1000"
+      MAX_CONNECTIONS: "1000"
+      PAYLOAD_SIZE: "1024"
+      ITERATIONS: "50"
+      BURST_REQUESTS: "1000"
+      BURST_DURATION: "2s"
+      RAMP_UP_DURATION: "2m"
+      SUSTAIN_DURATION: "3m"
+      THINK_TIME: "0"
+      COLD_START_WAIT_TIME_MINS: "5"
+      COLD_START_ITERATIONS: "5"
 
     steps:
       - name: Checkout code
