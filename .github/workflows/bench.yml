@@ -95,6 +95,11 @@ jobs:
           cd bench
           bun install
 
+      - name: Create results directory
+        run: |
+          cd bench
+          mkdir -p results
+
       - name: Run Burst Traffic Test
         if: ${{ inputs.run_burst_traffic == true }}
         run: |
@@ -144,6 +149,15 @@ jobs:
           echo "🔥 Running Warm Latency Test"
           bun run bench:warm
 
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_id }}
+          path: bench/results/
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Summary
         run: |
           echo "✅ Benchmark tests completed!"
@@ -155,3 +169,6 @@ jobs:
           ${{ inputs.run_payload_size == true && 'echo "  - Payload Size Test"' || 'echo ""' }}
           ${{ inputs.run_throughput == true && 'echo "  - Throughput Test"' || 'echo ""' }}
           ${{ inputs.run_warm_latency == true && 'echo "  - Warm Latency Test"' || 'echo ""' }}
+
+          echo ""
+          echo "📁 Results files have been uploaded as artifacts and can be downloaded from the Actions tab."
