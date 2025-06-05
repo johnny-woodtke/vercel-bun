@@ -100,6 +100,12 @@ jobs:
           cd bench
           mkdir -p results
 
+      - name: Prepare endpoint
+        run: |
+          cd bench
+          echo "🔥 Preparing endpoint"
+          bun run bench:prepare
+
       - name: Run Burst Traffic Test
         if: ${{ inputs.run_burst_traffic == true }}
         run: |
