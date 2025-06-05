@@ -53,16 +53,11 @@ export default function () {
 
   // Generate payload of specific size using utility
   const payload = generatePayloadOfSize(payloadSize);
-  const actualSize = new Blob([payload]).size;
 
   // Create request params with additional headers
   const params = createRequestParams("payload-size", endpoint, {
     payload_size: payloadSize.toString(),
-    actual_size: actualSize.toString(),
   });
-
-  // Add content-length header
-  params.headers!["Content-Length"] = actualSize.toString();
 
   const startTime = Date.now();
   const response = http.post(url, payload, params);
@@ -98,9 +93,9 @@ export default function () {
   // Log payload-specific issues
   if (!success) {
     if (response.status === 413) {
-      console.warn(`Payload too large: ${formatBytes(actualSize)} rejected`);
+      console.warn(`Payload too large: ${formatBytes(payloadSize)} rejected`);
     } else {
-      logRequestError(response, `${formatBytes(actualSize)} payload`);
+      logRequestError(response, `${formatBytes(payloadSize)} payload`);
     }
   }
 }
