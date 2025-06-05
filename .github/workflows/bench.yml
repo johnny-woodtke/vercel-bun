@@ -13,7 +13,12 @@ on:
         description: "API endpoint to test"
         required: false
         default: "/api/bun"
-        type: string
+        type: choice
+        options:
+          - "/api/bun"
+          - "/api/node"
+          - "/api/bun/workload"
+          - "/api/node/workload"
 
       # Test Selection
       run_burst_traffic:
@@ -28,11 +33,6 @@ on:
         type: boolean
       run_concurrency:
         description: "Run concurrency test"
-        required: false
-        default: false
-        type: boolean
-      run_error_handling:
-        description: "Run error handling test"
         required: false
         default: false
         type: boolean
@@ -121,13 +121,6 @@ jobs:
           echo "⚡ Running Concurrency Test"
           bun run bench:concurrency
 
-      - name: Run Error Handling Test
-        if: ${{ inputs.run_error_handling == true }}
-        run: |
-          cd bench
-          echo "🚨 Running Error Handling Test"
-          bun run bench:error
-
       - name: Run Payload Size Test
         if: ${{ inputs.run_payload_size == true }}
         run: |
@@ -165,7 +158,6 @@ jobs:
           ${{ inputs.run_burst_traffic == true && 'echo "  - Burst Traffic Test"' || 'echo ""' }}
           ${{ inputs.run_cold_start == true && 'echo "  - Cold Start Test"' || 'echo ""' }}
           ${{ inputs.run_concurrency == true && 'echo "  - Concurrency Test"' || 'echo ""' }}
-          ${{ inputs.run_error_handling == true && 'echo "  - Error Handling Test"' || 'echo ""' }}
           ${{ inputs.run_payload_size == true && 'echo "  - Payload Size Test"' || 'echo ""' }}
           ${{ inputs.run_throughput == true && 'echo "  - Throughput Test"' || 'echo ""' }}
           ${{ inputs.run_warm_latency == true && 'echo "  - Warm Latency Test"' || 'echo ""' }}
