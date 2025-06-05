@@ -20,6 +20,8 @@ export interface BenchConfig {
   rampUpDuration: string;
   sustainDuration: string;
   thinkTime: number;
+  coldStartWaitTimeMins: number;
+  coldStartIterations: number;
 }
 
 export function getCommonConfig(): BenchConfig {
@@ -37,6 +39,8 @@ export function getCommonConfig(): BenchConfig {
     rampUpDuration: __ENV.RAMP_UP_DURATION || "2m",
     sustainDuration: __ENV.SUSTAIN_DURATION || "3m",
     thinkTime: parseFloat(__ENV.THINK_TIME || "0"),
+    coldStartWaitTimeMins: parseFloat(__ENV.COLD_START_WAIT_TIME_MINS || "5"),
+    coldStartIterations: parseInt(__ENV.COLD_START_ITERATIONS || "5"),
   };
 }
 

@@ -4,9 +4,8 @@
   "private": true,
   "scripts": {
     "check-types": "tsc --noEmit",
-    "bench:all": "bun run src/run-all.ts",
     "bench:burst": "dotenv -e .env -- k6 run src/burst-traffic.ts",
-    "bench:cold-start": "bun run src/cold-start.ts",
+    "bench:cold-start": "dotenv -e .env -- k6 run src/cold-start.ts",
     "bench:concurrency": "dotenv -e .env -- k6 run src/concurrency.ts",
     "bench:error": "dotenv -e .env -- k6 run src/error-handling.ts",
     "bench:payload": "dotenv -e .env -- k6 run src/payload-size.ts",

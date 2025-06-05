@@ -1,207 +1,197 @@
-#!/usr/bin/env bun
+import { sleep } from "k6";
+import { Trend } from "k6/metrics";
 
-import { getConfig } from "./config";
 import {
-  createProgressBar,
-  Logger,
-  saveResult,
-  waitForColdStart,
-  type BenchmarkResult,
-} from "./utils";
+  createBaseSummary,
+  createCommonMetrics,
+  createPayload,
+  createRequestParams,
+  createStandardThresholds,
+  executeRequest,
+  getCommonConfig,
+  safeMetric,
+  saveResults,
+} from "./k6-utils.ts";
 
-interface ColdStartResult {
-  endpoint: string;
-  iteration: number;
-  responseTime: number;
-  ttfb: number; // Time to First Byte
-  success: boolean;
-  error?: string;
-}
+// Configuration using common utilities
+const config = getCommonConfig();
+const { baseUrl, endpoint, coldStartWaitTimeMins, coldStartIterations } =
+  config;
 
-async function measureColdStart(
-  url: string,
-  endpoint: string
-): Promise<ColdStartResult> {
-  const fullUrl = `${url}${endpoint}`;
-  const startTime = performance.now();
+// Custom metrics using common utilities plus cold start specific metrics
+const metrics = createCommonMetrics();
+const ttfbMetric = new Trend("time_to_first_byte");
 
-  try {
-    const response = await fetch(fullUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ test: "cold-start", timestamp: Date.now() }),
-    });
+export const options = {
+  scenarios: {
+    cold_start_test: {
+      executor: "per-vu-iterations",
+      vus: 1, // Single VU to ensure proper cold start isolation
+      iterations: coldStartIterations,
+      maxDuration: `${(coldStartWaitTimeMins * coldStartIterations + 5) * 60}s`, // Buffer for execution time
+    },
+  },
+  thresholds: {
+    ...createStandardThresholds({
+      maxLatencyP95: 10000, // Allow higher latency for cold starts
+      maxErrorRate: 0.1, // Allow some failures during cold starts
+      minSuccessRate: 0.9,
+    }),
+    time_to_first_byte: ["p(95)<8000"], // TTFB threshold for cold starts
+  },
+};
 
-    const ttfb = performance.now() - startTime;
-    await response.text(); // Consume response body
-    const responseTime = performance.now() - startTime;
+export default function () {
+  const url = `${baseUrl}${endpoint}`;
 
-    return {
-      endpoint,
-      iteration: 0,
-      responseTime,
-      ttfb,
-      success: response.ok,
-      error: response.ok ? undefined : `HTTP ${response.status}`,
-    };
-  } catch (error) {
-    const responseTime = performance.now() - startTime;
-    return {
-      endpoint,
-      iteration: 0,
-      responseTime,
-      ttfb: responseTime,
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+  // Log cold start attempt
+  console.log(
+    `🧪 Cold Start Test - Iteration ${__ITER + 1}/${coldStartIterations}`
+  );
+
+  // Wait for cold start if not the first iteration
+  if (__ITER > 0) {
+    const waitTimeSeconds = coldStartWaitTimeMins * 60;
+    console.log(
+      `⏳ Waiting ${coldStartWaitTimeMins} minutes for cold start...`
+    );
+    sleep(waitTimeSeconds);
+    console.log("✅ Cold start wait complete");
+  }
+
+  // Create payload using utility with cold start specific data
+  const payload = createPayload("cold-start", {
+    iteration: __ITER + 1,
+    waitTime: coldStartWaitTimeMins,
+    timestamp: Date.now(),
+  });
+
+  // Create request params using utility
+  const params = createRequestParams("cold-start", endpoint, {
+    iteration: (__ITER + 1).toString(),
+  });
+
+  // Track TTFB separately for cold start analysis
+  const startTime = Date.now();
+
+  // Execute request with common logic (allow higher latency for cold starts)
+  const { response, checkResult } = executeRequest(
+    url,
+    payload,
+    params,
+    metrics,
+    10000 // 10 second timeout for cold starts
+  );
+
+  // Calculate and record TTFB
+  const ttfb = response.timings.waiting;
+  ttfbMetric.add(ttfb);
+
+  // Log detailed results for each iteration
+  console.log(
+    `📊 Iteration ${__ITER + 1}: ${response.timings.duration.toFixed(
+      2
+    )}ms (TTFB: ${ttfb.toFixed(2)}ms) - ${
+      checkResult.overall ? "SUCCESS" : "FAILED"
+    }`
+  );
+
+  if (!checkResult.overall) {
+    console.warn(
+      `❌ Cold start failed - Status: ${response.status}, Error: ${
+        response.error || "Unknown"
+      }`
+    );
   }
 }
 
-async function runColdStartTest(): Promise<void> {
-  const config = getConfig();
-  const { baseUrl, endpoints, tests } = config;
+export function handleSummary(data: any) {
+  const endpoint_name = endpoint.replace("/api/", "").replace("/", "-");
 
-  Logger.info("🧪 Cold Start Latency Benchmark");
-  Logger.info(`Testing endpoints: ${Object.values(endpoints).join(", ")}`);
-  Logger.info(`Iterations per endpoint: ${tests.coldStart.iterations}`);
-  Logger.info(`Cold start wait time: ${tests.coldStart.waitTime} minutes\n`);
+  // Calculate total test duration
+  const totalDuration =
+    (coldStartWaitTimeMins * (coldStartIterations - 1) + 2) * 60 * 1000; // Rough estimate
 
-  const results: Record<string, ColdStartResult[]> = {};
+  // Create base summary using utility
+  const baseSummary = createBaseSummary(
+    data,
+    "cold-start",
+    endpoint,
+    totalDuration,
+    {
+      waitTimeMinutes: coldStartWaitTimeMins,
+      iterations: coldStartIterations,
+    }
+  );
 
-  for (const [name, endpoint] of Object.entries(endpoints)) {
-    Logger.testStart("Cold Start", name);
-    results[name] = [];
+  // Calculate cold start specific metrics
+  const avgTtfb = safeMetric(data.metrics.time_to_first_byte?.values?.avg);
+  const p95Ttfb = safeMetric(
+    data.metrics.time_to_first_byte?.values?.["p(95)"]
+  );
+  const maxTtfb = safeMetric(data.metrics.time_to_first_byte?.values?.max);
+  const minTtfb = safeMetric(data.metrics.time_to_first_byte?.values?.min);
 
-    const progress = createProgressBar(tests.coldStart.iterations);
+  const successfulRequests = baseSummary.requests - baseSummary.errors;
+  const successRate = (successfulRequests / baseSummary.requests) * 100;
 
-    for (let i = 0; i < tests.coldStart.iterations; i++) {
-      // Wait for cold start
-      await waitForColdStart(tests.coldStart.waitTime);
+  // Extended summary with cold start specific data
+  const summary = {
+    ...baseSummary,
+    coldStartMetrics: {
+      avgTtfb: avgTtfb,
+      p95Ttfb: p95Ttfb,
+      maxTtfb: maxTtfb,
+      minTtfb: minTtfb,
+      successRate: successRate,
+      totalIterations: coldStartIterations,
+      waitTime: coldStartWaitTimeMins,
+    },
+    metadata: {
+      ...baseSummary.metadata,
+      waitTimeMinutes: coldStartWaitTimeMins,
+      iterations: coldStartIterations,
+      avgTtfb: avgTtfb,
+      p95Ttfb: p95Ttfb,
+    },
+  };
 
-      const result = await measureColdStart(baseUrl, endpoint);
-      result.iteration = i + 1;
-      results[name].push(result);
+  // Log results using utility
+  console.log("\n📊 Cold Start Test Results Summary:\n");
 
-      progress.increment();
+  console.log(`${endpoint_name.toUpperCase()}:`);
+  console.log(`  Success Rate: ${successRate.toFixed(1)}%`);
+  console.log(`  Avg Response Time: ${baseSummary.avgLatency.toFixed(2)}ms`);
+  console.log(`  Avg TTFB: ${avgTtfb.toFixed(2)}ms`);
+  console.log(`  Min Response Time: ${baseSummary.minLatency.toFixed(2)}ms`);
+  console.log(`  Max Response Time: ${baseSummary.maxLatency.toFixed(2)}ms`);
+  console.log(`  P95 Response Time: ${baseSummary.p95Latency.toFixed(2)}ms`);
+  console.log(`  P95 TTFB: ${p95Ttfb.toFixed(2)}ms`);
+  console.log(`  Failed Requests: ${baseSummary.errors}`);
+  console.log(`  Total Iterations: ${coldStartIterations}`);
+  console.log(
+    `  Wait Time Between Iterations: ${coldStartWaitTimeMins} minutes\n`
+  );
 
-      Logger.info(
-        `Iteration ${i + 1}: ${result.responseTime.toFixed(
-          2
-        )}ms (TTFB: ${result.ttfb.toFixed(2)}ms) - ${
-          result.success ? "SUCCESS" : "FAILED"
-        }`
+  // Performance assessment
+  if (successRate >= 90 && baseSummary.p95Latency < 8000) {
+    console.log("✅ Cold start performance is acceptable");
+  } else {
+    console.log("⚠️  Cold Start Performance Issues Detected:");
+    if (successRate < 90) {
+      console.log(
+        `   • Low success rate: ${successRate.toFixed(1)}% (threshold: 90%)`
       );
     }
-
-    Logger.testComplete("Cold Start", name, 0);
-  }
-
-  // Calculate and display results
-  console.log("\n📊 Cold Start Results Summary:\n");
-
-  for (const [name, endpointResults] of Object.entries(results)) {
-    const successful = endpointResults.filter((r) => r.success);
-    const failed = endpointResults.filter((r) => !r.success);
-
-    if (successful.length === 0) {
-      Logger.error(`${name}: All requests failed`);
-      continue;
-    }
-
-    const responseTimes = successful.map((r) => r.responseTime);
-    const ttfbs = successful.map((r) => r.ttfb);
-
-    const avgResponseTime =
-      responseTimes.reduce((sum, time) => sum + time, 0) / successful.length;
-    const avgTtfb =
-      ttfbs.reduce((sum, time) => sum + time, 0) / successful.length;
-    const minResponseTime = Math.min(...responseTimes);
-    const maxResponseTime = Math.max(...responseTimes);
-    const sortedResponseTimes = responseTimes.sort((a, b) => a - b);
-    const p95ResponseTime =
-      sortedResponseTimes[Math.floor(successful.length * 0.95)] || 0;
-    const p99ResponseTime =
-      sortedResponseTimes[Math.floor(successful.length * 0.99)] ||
-      p95ResponseTime;
-
-    console.log(`${name.toUpperCase()}:`);
-    console.log(
-      `  Success Rate: ${(
-        (successful.length / endpointResults.length) *
-        100
-      ).toFixed(1)}%`
-    );
-    console.log(`  Avg Response Time: ${avgResponseTime.toFixed(2)}ms`);
-    console.log(`  Avg TTFB: ${avgTtfb.toFixed(2)}ms`);
-    console.log(`  Min Response Time: ${minResponseTime.toFixed(2)}ms`);
-    console.log(`  Max Response Time: ${maxResponseTime.toFixed(2)}ms`);
-    console.log(`  P95 Response Time: ${p95ResponseTime.toFixed(2)}ms`);
-    console.log(`  Failed Requests: ${failed.length}\n`);
-
-    // Save individual results
-    const benchmarkResult: BenchmarkResult = {
-      endpoint: name,
-      testType: "cold-start",
-      timestamp: new Date(),
-      duration: 0, // Not applicable for cold start
-      requests: successful.length,
-      rps: 0, // Not applicable
-      avgLatency: avgResponseTime,
-      p95Latency: p95ResponseTime,
-      p99Latency: p99ResponseTime,
-      maxLatency: maxResponseTime,
-      minLatency: minResponseTime,
-      errors: failed.length,
-      errorRate: (failed.length / endpointResults.length) * 100,
-      metadata: {
-        ttfb: {
-          avg: avgTtfb,
-          min: Math.min(...ttfbs),
-          max: Math.max(...ttfbs),
-        },
-        waitTime: tests.coldStart.waitTime,
-        iterations: tests.coldStart.iterations,
-      },
-    };
-
-    saveResult(benchmarkResult);
-  }
-
-  // Compare results
-  const endpointNames = Object.keys(results);
-  if (endpointNames.length === 2) {
-    const [endpoint1, endpoint2] = endpointNames;
-    if (endpoint1 && endpoint2) {
-      const results1 = results[endpoint1]?.filter((r) => r.success) || [];
-      const results2 = results[endpoint2]?.filter((r) => r.success) || [];
-
-      if (results1.length > 0 && results2.length > 0) {
-        const avg1 =
-          results1.reduce((sum: number, r) => sum + r.responseTime, 0) /
-          results1.length;
-        const avg2 =
-          results2.reduce((sum: number, r) => sum + r.responseTime, 0) /
-          results2.length;
-
-        const faster = avg1 < avg2 ? endpoint1 : endpoint2;
-        const improvement = Math.abs(
-          ((avg1 - avg2) / Math.max(avg1, avg2)) * 100
-        );
-
-        if (faster) {
-          Logger.success(
-            `🏆 ${faster.toUpperCase()} is ${improvement.toFixed(
-              1
-            )}% faster for cold starts`
-          );
-        }
-      }
+    if (baseSummary.p95Latency >= 8000) {
+      console.log(
+        `   • High P95 latency: ${baseSummary.p95Latency.toFixed(
+          2
+        )}ms (threshold: 8000ms)`
+      );
     }
   }
-}
 
-if (import.meta.main) {
-  runColdStartTest().catch(console.error);
+  // Save results using utility
+  return saveResults(summary, `cold-start-${endpoint_name}`);
 }

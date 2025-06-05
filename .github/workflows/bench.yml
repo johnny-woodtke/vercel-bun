@@ -1,0 +1,236 @@
+name: Benchmark Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      # API Configuration
+      bench_api_domain:
+        description: "Base URL for the API to benchmark"
+        required: false
+        default: "https://vercel-bun-bench.vercel.app"
+        type: string
+      endpoint:
+        description: "API endpoint to test"
+        required: false
+        default: "/api/bun"
+        type: string
+
+      # Test Duration & Load Configuration
+      duration:
+        description: "Test duration (e.g., 60s, 2m)"
+        required: false
+        default: "60s"
+        type: string
+      rps:
+        description: "Target requests per second"
+        required: false
+        default: "100"
+        type: string
+      max_rps:
+        description: "Maximum requests per second"
+        required: false
+        default: "1000"
+        type: string
+      max_connections:
+        description: "Maximum concurrent connections"
+        required: false
+        default: "1000"
+        type: string
+
+      # Payload Configuration
+      payload_size:
+        description: "Payload size in bytes"
+        required: false
+        default: "1024"
+        type: string
+
+      # Iteration Configuration
+      iterations:
+        description: "Number of iterations"
+        required: false
+        default: "50"
+        type: string
+
+      # Burst Traffic Configuration
+      burst_requests:
+        description: "Number of burst requests"
+        required: false
+        default: "1000"
+        type: string
+      burst_duration:
+        description: "Burst test duration"
+        required: false
+        default: "2s"
+        type: string
+
+      # Ramp Configuration
+      ramp_up_duration:
+        description: "Ramp up duration"
+        required: false
+        default: "2m"
+        type: string
+      sustain_duration:
+        description: "Sustain load duration"
+        required: false
+        default: "3m"
+        type: string
+
+      # Timing Configuration
+      think_time:
+        description: "Think time between requests (seconds)"
+        required: false
+        default: "0"
+        type: string
+
+      # Cold Start Configuration
+      cold_start_wait_time_mins:
+        description: "Cold start wait time in minutes"
+        required: false
+        default: "5"
+        type: string
+      cold_start_iterations:
+        description: "Cold start test iterations"
+        required: false
+        default: "5"
+        type: string
+
+      # Test Selection
+      run_burst_traffic:
+        description: "Run burst traffic test"
+        required: false
+        default: false
+        type: boolean
+      run_cold_start:
+        description: "Run cold start test"
+        required: false
+        default: false
+        type: boolean
+      run_concurrency:
+        description: "Run concurrency test"
+        required: false
+        default: false
+        type: boolean
+      run_error_handling:
+        description: "Run error handling test"
+        required: false
+        default: false
+        type: boolean
+      run_payload_size:
+        description: "Run payload size test"
+        required: false
+        default: false
+        type: boolean
+      run_throughput:
+        description: "Run throughput test"
+        required: false
+        default: false
+        type: boolean
+      run_warm_latency:
+        description: "Run warm latency test"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    env:
+      BENCH_API_DOMAIN: ${{ inputs.bench_api_domain }}
+      ENDPOINT: ${{ inputs.endpoint }}
+      DURATION: ${{ inputs.duration }}
+      RPS: ${{ inputs.rps }}
+      MAX_RPS: ${{ inputs.max_rps }}
+      MAX_CONNECTIONS: ${{ inputs.max_connections }}
+      PAYLOAD_SIZE: ${{ inputs.payload_size }}
+      ITERATIONS: ${{ inputs.iterations }}
+      BURST_REQUESTS: ${{ inputs.burst_requests }}
+      BURST_DURATION: ${{ inputs.burst_duration }}
+      RAMP_UP_DURATION: ${{ inputs.ramp_up_duration }}
+      SUSTAIN_DURATION: ${{ inputs.sustain_duration }}
+      THINK_TIME: ${{ inputs.think_time }}
+      COLD_START_WAIT_TIME_MINS: ${{ inputs.cold_start_wait_time_mins }}
+      COLD_START_ITERATIONS: ${{ inputs.cold_start_iterations }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Install dependencies
+        run: |
+          cd bench
+          bun install
+
+      - name: Run Burst Traffic Test
+        if: ${{ inputs.run_burst_traffic == true }}
+        run: |
+          cd bench
+          echo "🚀 Running Burst Traffic Test"
+          bun run bench:burst
+
+      - name: Run Cold Start Test
+        if: ${{ inputs.run_cold_start == true }}
+        run: |
+          cd bench
+          echo "❄️ Running Cold Start Test"
+          bun run bench:cold-start
+
+      - name: Run Concurrency Test
+        if: ${{ inputs.run_concurrency == true }}
+        run: |
+          cd bench
+          echo "⚡ Running Concurrency Test"
+          bun run bench:concurrency
+
+      - name: Run Error Handling Test
+        if: ${{ inputs.run_error_handling == true }}
+        run: |
+          cd bench
+          echo "🚨 Running Error Handling Test"
+          bun run bench:error
+
+      - name: Run Payload Size Test
+        if: ${{ inputs.run_payload_size == true }}
+        run: |
+          cd bench
+          echo "📦 Running Payload Size Test"
+          bun run bench:payload
+
+      - name: Run Throughput Test
+        if: ${{ inputs.run_throughput == true }}
+        run: |
+          cd bench
+          echo "🚀 Running Throughput Test"
+          bun run bench:throughput
+
+      - name: Run Warm Latency Test
+        if: ${{ inputs.run_warm_latency == true }}
+        run: |
+          cd bench
+          echo "🔥 Running Warm Latency Test"
+          bun run bench:warm
+
+      - name: Summary
+        run: |
+          echo "✅ Benchmark tests completed!"
+          echo "Tests run:"
+          ${{ inputs.run_burst_traffic == true && 'echo "  - Burst Traffic Test"' || 'echo ""' }}
+          ${{ inputs.run_cold_start == true && 'echo "  - Cold Start Test"' || 'echo ""' }}
+          ${{ inputs.run_concurrency == true && 'echo "  - Concurrency Test"' || 'echo ""' }}
+          ${{ inputs.run_error_handling == true && 'echo "  - Error Handling Test"' || 'echo ""' }}
+          ${{ inputs.run_payload_size == true && 'echo "  - Payload Size Test"' || 'echo ""' }}
+          ${{ inputs.run_throughput == true && 'echo "  - Throughput Test"' || 'echo ""' }}
+          ${{ inputs.run_warm_latency == true && 'echo "  - Warm Latency Test"' || 'echo ""' }}
