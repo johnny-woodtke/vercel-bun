@@ -7,7 +7,6 @@
     "bench:burst": "dotenv -e .env -- k6 run src/burst-traffic.ts",
     "bench:cold-start": "dotenv -e .env -- k6 run src/cold-start.ts",
     "bench:concurrency": "dotenv -e .env -- k6 run src/concurrency.ts",
-    "bench:error": "dotenv -e .env -- k6 run src/error-handling.ts",
     "bench:payload": "dotenv -e .env -- k6 run src/payload-size.ts",
     "bench:throughput": "dotenv -e .env -- k6 run src/throughput.ts",
     "bench:warm": "dotenv -e .env -- k6 run src/warm-latency.ts"
