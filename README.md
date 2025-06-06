@@ -104,12 +104,11 @@ See the [example](./example) directory for a complete example of using this runt
 
 ## Next Steps
 
-- [ ] **Performance Benchmarks**: Create performance comparisons between Bun and Node.js runtimes.
-  - [bench](./bench) directory with two functions: `/api/bun.ts` and `/api/node.ts`. Both functions should perform the same operations.
-  - Write a script to query the production API routes.
-  - Query Vercel logs to compile perf metrics (removes "over-the-wire" time).
-  - Record warmed-up metrics (and cold-start metrics, if possible)
-  - Ensure script is runnable in GitHub Actions.
+- [ ] **Improve Bun Runtime Performance**: Node.js is faster than Bun in some contexts, fix this.
+    - Vercel's Node.js Runtime API Interface implementation: https://github.dev/vercel/vercel/blob/main/packages/node/src/serverless-functions/helpers-web.ts
+    - AWS's Node.js bootstrap entrypoint: https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/blob/main/src/index.mjs
+    - Install [NPM module](https://www.npmjs.com/package/aws-lambda-ric) and execute [`bin/index.mjs`](https://github.dev/aws/aws-lambda-nodejs-runtime-interface-client/blob/main/src/index.mjs) via `bunx aws-lambda-ric` with proper args.
+    - Verify performance with benchmarks.
 - [ ] **Framework Examples**: Add more framework examples (Hono, Fastify, etc.).
 
 ## Goals
