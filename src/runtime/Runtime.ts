@@ -66,8 +66,8 @@ export const Runtime = {
         return res;
       });
 
-    console.log("next invocation response payload");
-    console.log(JSON.stringify(payload, null, 2));
+    // console.log("next invocation response payload");
+    // console.log(JSON.stringify(payload, null, 2));
 
     // Return the payload transformed into a Request object and the AWS request ID
     return {
