@@ -1,15 +1,31 @@
 export type Handler = (req: Request) => Promise<Response>;
 
-export interface VercelRequestPayload {
-  method: string;
-  path: string;
-  headers: Record<string, string>;
-  body: string;
-}
+export type GetNextInvocationResponsePayload = {
+  body: {
+    body?: string;
+    encoding?: BufferEncoding;
+    features: Record<string, boolean>;
+    headers: Record<string, string> & {
+      "x-forwarded-proto": string;
+    };
+    host: string;
+    method: string;
+    path: string;
+    invokedAt: number;
+    maxDuration: number;
+  };
+  Action: string;
+};
 
-export interface VercelResponsePayload {
+export type PostInvocationRequestPayload = {
+  body?: string;
+  encoding?: "base64" & BufferEncoding;
   statusCode: number;
   headers: Record<string, string | string[]>;
-  encoding: "base64";
-  body: string;
-}
+};
+
+export type ErrorInvocationBody = {
+  errorMessage: string;
+  errorType: string;
+  stackTrace: string[];
+};
