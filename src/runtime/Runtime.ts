@@ -20,6 +20,9 @@ function invocationErrorUrl<TAwsRequestId extends string>(
 const lambdaRuntimeAwsRequestIdHeader =
   "Lambda-Runtime-Aws-Request-Id" as const;
 
+const lambdaRuntimeFunctionErrorTypeHeader =
+  "Lambda-Runtime-Function-Error-Type" as const;
+
 type NextInvocationEvent = {
   body: string;
 };
@@ -88,6 +91,7 @@ export const Runtime = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        [lambdaRuntimeFunctionErrorTypeHeader]: error.errorType,
       },
       body: JSON.stringify(error),
     });
@@ -107,6 +111,7 @@ export const Runtime = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        [lambdaRuntimeFunctionErrorTypeHeader]: error.errorType,
       },
       body: JSON.stringify(error),
     });

@@ -2,6 +2,7 @@ import {
   download,
   FileFsRef,
   getProvidedRuntime,
+  glob,
   Lambda,
   type BuildV3,
   type Files,
@@ -84,7 +85,7 @@ export const build: BuildV3 = async function ({
   const bunOutputPath = resolve(bunBinaryPath, "bun");
   await writeFile(bunOutputPath, bunExecutable, { mode: 0o755 });
 
-  // Download runtime files containing Bun modules
+  // Save bun binary and runtime files
   const runtimeFiles: Files = {
     // Save bun binary
     "bin/bun": new FileFsRef({
@@ -99,34 +100,7 @@ export const build: BuildV3 = async function ({
     }),
 
     // Save runtime files
-    "runtime/index.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/index.ts"),
-    }),
-    "runtime/constants.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/constants.ts"),
-    }),
-    "runtime/getHandler.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/getHandler.ts"),
-    }),
-    "runtime/http.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/http.ts"),
-    }),
-    "runtime/lambda.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/lambda.ts"),
-    }),
-    "runtime/transforms.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/transforms.ts"),
-    }),
-    "runtime/types.ts": new FileFsRef({
-      mode: 0o644,
-      fsPath: resolve(currentDir, "runtime/types.ts"),
-    }),
+    ...(await glob("runtime/**", currentDir)),
   };
 
   // Download the user files
