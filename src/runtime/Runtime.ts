@@ -4,28 +4,49 @@ import type {
   PostInvocationRequestPayload,
 } from "./types";
 
+/**
+ * The base URL for the AWS Lambda Runtime API.
+ */
 const baseUrl =
   `http://${process.env.AWS_LAMBDA_RUNTIME_API}/2018-06-01` as const;
 
+/**
+ * The URL for the next invocation endpoint.
+ */
 const nextInvocationUrl = `${baseUrl}/runtime/invocation/next` as const;
 
+/**
+ * The URL for the invocation response endpoint.
+ */
 function invocationResponseUrl<TAwsRequestId extends string>(
   awsRequestId: TAwsRequestId
 ) {
   return `${baseUrl}/runtime/invocation/${awsRequestId}/response` as const;
 }
 
+/**
+ * The URL for the initialization error endpoint.
+ */
 const initializationErrorUrl = `${baseUrl}/runtime/init/error` as const;
 
+/**
+ * The URL for the invocation error endpoint.
+ */
 function invocationErrorUrl<TAwsRequestId extends string>(
   awsRequestId: TAwsRequestId
 ) {
   return `${baseUrl}/runtime/invocation/${awsRequestId}/error` as const;
 }
 
+/**
+ * The header for the AWS request ID.
+ */
 const lambdaRuntimeAwsRequestIdHeader =
   "Lambda-Runtime-Aws-Request-Id" as const;
 
+/**
+ * The header for the function error type.
+ */
 const lambdaRuntimeFunctionErrorTypeHeader =
   "Lambda-Runtime-Function-Error-Type" as const;
 
@@ -36,6 +57,10 @@ const lambdaRuntimeFunctionErrorTypeHeader =
  * @see https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html
  */
 export const Runtime = {
+  /**
+   * Gets the next invocation from the runtime API and converts it into a Request object.
+   * Also returns the AWS request ID.
+   */
   async getNextInvocation(): Promise<{
     request: Request;
     awsRequestId: string;
@@ -66,9 +91,6 @@ export const Runtime = {
         return res;
       });
 
-    // console.log("next invocation response payload");
-    // console.log(JSON.stringify(payload, null, 2));
-
     // Return the payload transformed into a Request object and the AWS request ID
     return {
       request: new Request(
@@ -85,6 +107,9 @@ export const Runtime = {
     };
   },
 
+  /**
+   * Transforms the response into a format that can be sent to the runtime API, and then posts it.
+   */
   async postInvocationResponse<TAwsRequestId extends string>(
     awsRequestId: TAwsRequestId,
     response: Response
@@ -120,6 +145,9 @@ export const Runtime = {
     }
   },
 
+  /**
+   * Posts an initialization error to the runtime API.
+   */
   async postInitializationError(error: ErrorInvocationBody): Promise<void> {
     const res = await fetch(initializationErrorUrl, {
       method: "POST",
@@ -137,6 +165,9 @@ export const Runtime = {
     }
   },
 
+  /**
+   * Posts an invocation error to the runtime API.
+   */
   async postInvocationError<TAwsRequestId extends string>(
     awsRequestId: TAwsRequestId,
     error: ErrorInvocationBody

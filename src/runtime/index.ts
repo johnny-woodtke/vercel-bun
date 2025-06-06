@@ -7,9 +7,6 @@ async function processEvents() {
       // Get the next event
       const { request, awsRequestId } = await Runtime.getNextInvocation();
 
-      console.log("transformed request");
-      console.dir(request, { depth: null });
-
       try {
         // Get the handler
         const handler = await getHandler();
@@ -17,14 +14,10 @@ async function processEvents() {
         // Run user code and get the response
         const response = await handler(request);
 
-        console.log("handler response");
-        console.dir(response, { depth: null });
-
-        throw new Error("test");
-
         // Parse the response
         await Runtime.postInvocationResponse(awsRequestId, response);
-      } catch (e: unknown) {
+      } catch (e) {
+        // Cast the error to an Error
         const error = e as Error;
 
         // Log the error
@@ -37,12 +30,19 @@ async function processEvents() {
           stackTrace: error.stack?.split("\n") ?? [],
         });
       }
-    } catch (e: any) {
-      // Log the error
-      console.error("Lambda runtime error:", e.message);
+    } catch (e) {
+      // Cast the error to an Error
+      const error = e as Error;
 
-      // Wait a bit before retrying
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Log the error
+      console.error("Lambda runtime error:", error.message);
+
+      // Post the initialization error (since we don't have an AWS request ID)
+      await Runtime.postInitializationError({
+        errorMessage: error.message,
+        errorType: error.name,
+        stackTrace: error.stack?.split("\n") ?? [],
+      });
     }
   }
 }
