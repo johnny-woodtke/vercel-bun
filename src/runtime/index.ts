@@ -8,7 +8,7 @@ async function processEvents() {
       const { request, awsRequestId } = await Runtime.getNextInvocation();
 
       console.log("transformed request");
-      console.log(JSON.stringify(request, null, 2));
+      console.dir(request, { depth: null });
 
       try {
         // Get the handler
@@ -18,7 +18,9 @@ async function processEvents() {
         const response = await handler(request);
 
         console.log("handler response");
-        console.log(JSON.stringify(response, null, 2));
+        console.dir(response, { depth: null });
+
+        throw new Error("test");
 
         // Parse the response
         await Runtime.postInvocationResponse(awsRequestId, response);
