@@ -1,5 +1,6 @@
 import { getHandler } from "./getHandler";
 import { invokeError, invokeResponse, nextInvocation } from "./lambda";
+import { Runtime } from "./Runtime";
 import { fromVercelRequest, toVercelResponse } from "./transforms";
 import type {
   Handler,
@@ -8,43 +9,31 @@ import type {
 } from "./types";
 
 async function processEvents() {
-  let event: any;
-  let awsRequestId: string;
-
-  let handler: Handler;
-
-  let payload: VercelRequestPayload;
-  let req: Request;
-
-  let res: Response;
-
-  let vercelRes: VercelResponsePayload;
-
   while (true) {
     try {
       // Get the next event
-      ({ event, awsRequestId } = await nextInvocation());
+      const { event, awsRequestId } = await Runtime.getNextInvocation();
 
       try {
         // Get the handler
-        handler = await getHandler();
+        const handler = await getHandler();
 
         // Parse the request
-        payload = JSON.parse(event.body);
-        req = fromVercelRequest(payload);
+        const payload = JSON.parse(event.body);
+        const req = fromVercelRequest(payload);
 
         // Run user code and send response
-        res = await handler(req);
+        const res = await handler(req);
 
         // Parse the response
-        vercelRes = await toVercelResponse(res);
-        await invokeResponse(vercelRes, awsRequestId);
+        const vercelRes = await toVercelResponse(res);
+        await Runtime.postInvocationResponse(awsRequestId, vercelRes);
       } catch (e: any) {
         // Log the error
         console.error("User code error:", e.message);
 
         // Invoke the error
-        await invokeError(e, awsRequestId);
+        await Runtime.postInvocationError(awsRequestId, e);
       }
     } catch (e: any) {
       // Log the error
