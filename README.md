@@ -8,7 +8,7 @@ vercel-bun is a custom Vercel runtime that enables you to run serverless functio
 
 ## Features
 
-- 🚀 **High Performance**: Uses Bun's fast JavaScript runtime (version 1.2.13 by default)
+- 🚀 **High Performance**: Uses Bun's fast JavaScript runtime (version 1.2.15 by default)
 - 📦 **Native TypeScript**: Built-in TypeScript support without additional compilation
 - 🌐 **Web Standard APIs**: Uses native `Request` and `Response` interfaces
 - 🏗️ **Framework Agnostic**: Works with any framework that supports Bun (Elysia, Hono, etc.)
@@ -23,7 +23,7 @@ vercel-bun is a custom Vercel runtime that enables you to run serverless functio
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.1.2"
+      "runtime": "@godsreveal/vercel-bun@0.2.0-alpha.10"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts
@@ -94,7 +94,7 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/docs/git#deploying-
 
 | Variable      | Description                    | Default  | Example  |
 | ------------- | ------------------------------ | -------- | -------- |
-| `BUN_VERSION` | Specify the Bun version to use | `1.2.13` | `1.2.13` |
+| `BUN_VERSION` | Specify the Bun version to use | `1.2.15` | `1.2.15` |
 
 ## Examples
 

@@ -12,16 +12,14 @@ import JSZip from "jszip";
 import { dirname, resolve } from "path";
 
 const buildConfig = {
-  defaultBunVersion: "1.2.13",
+  defaultBunVersion: "1.2.15",
   defaultArch: "x64",
 } as const;
 
 export const build: BuildV3 = async function ({
   files,
-  config,
   entrypoint,
   workPath,
-  repoRootPath,
   meta,
 }) {
   // Determine architecture - Vercel's AWS Lambda runs on x64 by default
