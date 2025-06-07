@@ -103,6 +103,8 @@ export const build: BuildV3 = async function ({
 
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
+  console.log("Downloaded user files");
+  console.log(Object.keys(userFiles).join("\n"));
 
   // Create Lambda
   const lambda = new Lambda({

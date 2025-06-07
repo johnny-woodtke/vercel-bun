@@ -1,7 +1,7 @@
 import type {
   ErrorInvocationBody,
   GetNextInvocationResponsePayload,
-  PostInvocationRequestPayload,
+  PostInvocationResponsePayload,
 } from "./types";
 
 /**
@@ -49,6 +49,11 @@ const lambdaRuntimeAwsRequestIdHeader =
  */
 const lambdaRuntimeFunctionErrorTypeHeader =
   "Lambda-Runtime-Function-Error-Type" as const;
+
+/**
+ * The default encoding for the body.
+ */
+const defaultBodyEncoding = "base64" as const;
 
 /**
  * References the latest AWS Request ID
@@ -116,7 +121,10 @@ export const Runtime = {
           method: payload.body.method,
           headers: new Headers(payload.body.headers),
           body: payload.body.body
-            ? Buffer.from(payload.body.body, payload.body.encoding || "base64")
+            ? Buffer.from(
+                payload.body.body,
+                payload.body.encoding || defaultBodyEncoding
+              )
             : undefined,
         }
       ),
@@ -136,7 +144,7 @@ export const Runtime = {
       .arrayBuffer()
       .then((buffer) =>
         buffer.byteLength > 0
-          ? Buffer.from(buffer).toString("base64")
+          ? Buffer.from(buffer).toString(defaultBodyEncoding)
           : undefined
       );
 
@@ -149,9 +157,9 @@ export const Runtime = {
       body: JSON.stringify({
         statusCode: response.status,
         headers: response.headers.toJSON(),
-        encoding: body ? "base64" : undefined,
+        encoding: body ? defaultBodyEncoding : undefined,
         body,
-      } satisfies PostInvocationRequestPayload),
+      } satisfies PostInvocationResponsePayload),
     });
 
     // Throw an error if the response is not OK
