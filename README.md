@@ -23,7 +23,7 @@ vercel-bun is a custom Vercel runtime that enables you to run serverless functio
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.1-alpha.1"
+      "runtime": "@godsreveal/vercel-bun@0.2.1"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts
@@ -104,12 +104,7 @@ See the [example](./example) directory for a complete example of using this runt
 
 ## Next Steps
 
-- [ ] **Improve Bun Runtime Performance**: Node.js is faster than Bun in some contexts, fix this.
-  - Vercel's Node.js Runtime API Interface implementation: https://github.dev/vercel/vercel/blob/main/packages/node/src/serverless-functions/helpers-web.ts
-  - AWS's Node.js bootstrap entrypoint: https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/blob/main/src/index.mjs
-  - Install [NPM module](https://www.npmjs.com/package/aws-lambda-ric) and execute [`bin/index.mjs`](https://github.dev/aws/aws-lambda-nodejs-runtime-interface-client/blob/main/src/index.mjs) via `bunx aws-lambda-ric` with proper args.
-  - Verify performance with benchmarks.
-- [ ] **Framework Examples**: Add more framework examples (Hono, Fastify, etc.).
+- [ ] **Framework Examples**: Add more framework examples (grammY, Hono, Fastify, etc.).
 
 ## Goals
 
