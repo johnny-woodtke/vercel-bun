@@ -1,0 +1,17 @@
+{
+  "name": "grammy",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.15"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "grammy": "^1.36.3"
+  }
+}
