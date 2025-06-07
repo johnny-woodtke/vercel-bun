@@ -11,10 +11,11 @@ import { mkdir, writeFile } from "fs/promises";
 import JSZip from "jszip";
 import { dirname, resolve } from "path";
 
-const buildConfig = {
-  defaultBunVersion: "1.2.15",
-  defaultArch: "x64",
-} as const;
+const arch = process.arch === "arm64" ? "aarch64" : "x64";
+
+const bunVersion = process.env.BUN_VERSION || "1.2.15";
+
+const currentDir = dirname(__filename);
 
 export const build: BuildV3 = async function ({
   files,
@@ -25,12 +26,58 @@ export const build: BuildV3 = async function ({
   // Log the entrypoint
   console.log(`\nBuilding entrypoint: ${entrypoint}`);
 
-  // Determine architecture - Vercel's AWS Lambda runs on x64 by default
-  const arch = process.arch === "arm64" ? "aarch64" : buildConfig.defaultArch;
+  // Download runtime and user files
+  const [runtimeFiles, userFiles] = await Promise.all([
+    downloadRuntimeFiles(),
+    downloadUserFiles({ files, workPath, meta }),
+  ]);
 
-  // Determine Bun version
-  const bunVersion = process.env.BUN_VERSION ?? buildConfig.defaultBunVersion;
+  // Create Lambda
+  const lambda = new Lambda({
+    files: {
+      ...userFiles,
+      ...runtimeFiles,
+    },
+    handler: entrypoint,
+    runtime: await getProvidedRuntime(),
+  });
+  console.log(`Created Lambda with bun@${bunVersion} runtime\n`);
 
+  // Return the Lambda function
+  return {
+    output: lambda,
+  };
+};
+
+/**
+ * Downloads the user files from the build context.
+ */
+async function downloadUserFiles({
+  files,
+  workPath,
+  meta,
+}: Pick<
+  Parameters<BuildV3>[0],
+  "files" | "workPath" | "meta"
+>): Promise<Files> {
+  // Download the user files
+  const userFiles = await download(files, workPath, meta);
+
+  // Log results
+  console.log(
+    `Downloaded user files\n${Object.keys(userFiles)
+      .map((file) => `  ${file}`)
+      .join("\n")}`
+  );
+
+  // Return the user files
+  return userFiles;
+}
+
+/**
+ * Downloads the Bun binary for the right architecture.
+ */
+async function downloadBunBinary(): Promise<FileFsRef> {
   // Get the Bun binary URL for the right architecture
   const { href } = new URL(
     `https://bun.sh/download/${bunVersion}/linux/${arch}?avx2=true`
@@ -68,9 +115,6 @@ export const build: BuildV3 = async function ({
   const cwd = bun.name.split("/")[0];
   archive = cwd ? archive.folder(cwd) ?? archive : archive;
 
-  // Get the directory where this file is located
-  const currentDir = dirname(__filename);
-
   // Extract the binary to the workPath
   const bunBinaryPath = resolve(currentDir, "bin");
   await mkdir(bunBinaryPath, { recursive: true });
@@ -80,13 +124,27 @@ export const build: BuildV3 = async function ({
   const bunOutputPath = resolve(bunBinaryPath, "bun");
   await writeFile(bunOutputPath, bunExecutable, { mode: 0o755 });
 
+  // Return the Bun binary
+  return new FileFsRef({
+    mode: 0o755,
+    fsPath: bunOutputPath,
+  });
+}
+
+/**
+ * Downloads the runtime files.
+ */
+async function downloadRuntimeFiles(): Promise<Files> {
+  // Download the Bun binary and the runtime files
+  const [bunBinary, runtimeFiles] = await Promise.all([
+    downloadBunBinary(),
+    glob("runtime/**", currentDir),
+  ]);
+
   // Save bun binary and runtime files
-  const runtimeFiles: Files = {
+  return {
     // Save bun binary
-    "bin/bun": new FileFsRef({
-      mode: 0o755,
-      fsPath: bunOutputPath,
-    }),
+    "bin/bun": bunBinary,
 
     // Save bootstrap
     bootstrap: new FileFsRef({
@@ -95,31 +153,6 @@ export const build: BuildV3 = async function ({
     }),
 
     // Save runtime files
-    ...(await glob("runtime/**", currentDir)),
+    ...runtimeFiles,
   };
-
-  // Download the user files
-  const userFiles: Files = await download(files, workPath, meta);
-  console.log("Downloaded user files");
-  console.log(
-    Object.keys(userFiles)
-      .map((file) => `  ${file}`)
-      .join("\n")
-  );
-
-  // Create Lambda
-  const lambda = new Lambda({
-    files: {
-      ...userFiles,
-      ...runtimeFiles,
-    },
-    handler: entrypoint,
-    runtime: await getProvidedRuntime(),
-  });
-  console.log(`Created Lambda with bun@${bunVersion} runtime\n`);
-
-  // Return the Lambda function
-  return {
-    output: lambda,
-  };
-};
+}
