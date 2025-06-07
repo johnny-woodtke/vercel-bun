@@ -16,10 +16,8 @@ import {
 
 // Configuration using common utilities
 const config = getCommonConfig();
-const { baseUrl, endpoint } = config;
-const burstRequests = config.burstRequests || 1000;
-const burstDuration = config.burstDuration || "2s";
-const iterations = config.iterations || 5;
+const { baseUrl, endpoint, burstRequests, burstDuration, burstIntensity } =
+  config;
 
 // Custom metrics using common utilities plus burst-specific metrics
 const metrics = createCommonMetrics();
@@ -28,20 +26,51 @@ const recoveryTime = new Trend("recovery_time");
 
 export const options = {
   scenarios: {
-    burst_test: {
-      executor: "per-vu-iterations",
-      vus: Math.min(burstRequests, 100), // Limit VUs to reasonable number
-      iterations: Math.ceil(burstRequests / Math.min(burstRequests, 100)),
-      maxDuration: "30s",
+    // Warm-up phase
+    warmup: {
+      executor: "constant-arrival-rate",
+      rate: 10,
+      timeUnit: "1s",
+      duration: "30s",
+      preAllocatedVUs: 10,
+      maxVUs: 20,
+      tags: { phase: "warmup" },
+      exec: "warmupRequest",
+    },
+    // Main burst test
+    burst_spike: {
+      executor: "constant-arrival-rate",
+      rate: burstIntensity,
+      timeUnit: "1s",
+      duration: burstDuration,
+      preAllocatedVUs: Math.min(burstIntensity, 100),
+      maxVUs: Math.min(burstIntensity * 2, 200),
+      startTime: "35s", // Start after warmup
+      tags: { phase: "burst" },
+      exec: "burstRequest",
+    },
+    // Recovery phase
+    recovery: {
+      executor: "constant-arrival-rate",
+      rate: 20,
+      timeUnit: "1s",
+      duration: "60s",
+      preAllocatedVUs: 20,
+      maxVUs: 30,
+      startTime: `${35 + parseInt(burstDuration.replace("s", ""))}s`,
+      tags: { phase: "recovery" },
+      exec: "recoveryRequest",
     },
   },
   thresholds: {
     ...createStandardThresholds({
-      maxLatencyP95: 3000, // Allow higher latency during bursts
-      maxErrorRate: 0.15, // Allow higher error rate during burst
-      minSuccessRate: 0.85,
+      maxLatencyP95: 5000, // Allow higher latency during bursts
+      maxErrorRate: 0.1, // Allow moderate error rate during burst
+      minSuccessRate: 0.9,
     }),
-    burst_response_time: ["p(90)<2000"],
+    burst_response_time: ["p(90)<3000", "p(95)<5000"],
+    "http_req_duration{phase:burst}": ["p(90)<3000"],
+    "http_req_failed{phase:burst}": ["rate<0.15"],
   },
 };
 
@@ -51,50 +80,78 @@ let requestCount: number = 0;
 interface SetupData {
   burstRequests: number;
   burstDuration: number;
+  burstIntensity: number;
   startTime: number;
 }
 
 export function setup(): SetupData {
-  console.log(`🚀 Starting Burst Traffic Test`);
-  console.log(`Target: ${burstRequests} requests in ${burstDuration}`);
+  console.log(`🚀 Starting Improved Burst Traffic Test`);
+  console.log(`Target: ${burstIntensity} RPS for ${burstDuration}`);
+  console.log(
+    `Expected total requests: ~${
+      burstIntensity * parseInt(burstDuration.replace("s", ""))
+    }`
+  );
   console.log(`Endpoint: ${endpoint}`);
 
   return {
     burstRequests: burstRequests,
-    burstDuration: parseFloat(burstDuration.replace("s", "")) * 1000,
+    burstDuration: parseInt(burstDuration.replace("s", "")) * 1000,
+    burstIntensity: burstIntensity,
     startTime: Date.now(),
   };
 }
 
-export default function (data: SetupData) {
+// Warmup function
+export function warmupRequest(data: SetupData) {
+  const url = `${baseUrl}${endpoint}`;
+
+  // Create payload using utility with warmup-specific data
+  const payload = createPayload("burst-warmup", {
+    phase: "warmup",
+    timestamp: Date.now(),
+  });
+
+  // Create request params with warmup-specific headers
+  const params = createRequestParams("burst-warmup", endpoint, {
+    phase: "warmup",
+  });
+
+  const requestStart = Date.now();
+  const response = http.post(url, payload, params);
+  const requestEnd = Date.now();
+
+  // Basic checks for warmup
+  check(response, {
+    "warmup status is 200": (r) => r.status === 200,
+    "warmup response time reasonable": (r) => r.timings.duration < 2000,
+  });
+}
+
+// Main burst function
+export function burstRequest(data: SetupData) {
   if (!burstStartTime) {
     burstStartTime = Date.now();
-  }
-
-  const url = `${baseUrl}${endpoint}`;
-  const currentTime = Date.now();
-  const elapsedTime = currentTime - burstStartTime;
-
-  // Only send requests during burst window
-  if (elapsedTime > data.burstDuration) {
-    return; // Stop sending requests after burst duration
+    console.log("🔥 Burst phase started!");
   }
 
   requestCount++;
+  const url = `${baseUrl}${endpoint}`;
 
   // Create payload using utility with burst-specific data
   const payload = createPayload("burst-traffic", {
+    phase: "burst",
     burstId: data.startTime,
     requestNumber: requestCount,
-    elapsedTime: elapsedTime,
-    targetBurstSize: data.burstRequests,
+    targetIntensity: data.burstIntensity,
   });
 
   // Create request params with burst-specific headers
   const params = createRequestParams("burst-traffic", endpoint, {
-    burst_phase: "active",
+    phase: "burst",
   });
   params.headers!["X-Burst-Test"] = "true";
+  params.headers!["X-Burst-Intensity"] = data.burstIntensity.toString();
 
   const requestStart = Date.now();
   const response = http.post(url, payload, params);
@@ -102,175 +159,183 @@ export default function (data: SetupData) {
 
   const responseTime = requestEnd - requestStart;
 
-  // Perform custom checks for burst scenarios
+  // Perform checks for burst scenarios with more tolerance
   const success = check(response, {
-    "status is 200": (r) => r.status === 200,
-    "response time < 10000ms": (r) => r.timings.duration < 10000,
-    "response has body": (r) => {
+    "burst status is 2xx or 503": (r) =>
+      (r.status >= 200 && r.status < 300) || r.status === 503,
+    "burst response time < 10s": (r) => r.timings.duration < 10000,
+    "burst has response body": (r) => {
       if (!r.body) return false;
       if (typeof r.body === "string") return r.body.length > 0;
       if (r.body instanceof ArrayBuffer) return r.body.byteLength > 0;
       return false;
     },
-    "no timeout": (r) => r.status !== 0,
-    "server responsive": (r) => r.status < 500 || r.status === 503, // 503 is acceptable during burst
+    "burst no connection timeout": (r) => r.status !== 0,
   });
 
   // Record metrics
   metrics.errorRate.add(!success);
   burstResponseTime.add(responseTime);
 
-  // Log severe issues (but 503 is expected during burst)
-  if (!success && response.status !== 503) {
-    console.warn(
-      `Burst request ${requestCount} failed: Status ${response.status}, Time: ${responseTime}ms`
+  // Log progress every 50 requests during burst
+  if (requestCount % 50 === 0) {
+    console.log(
+      `📊 Burst progress: ${requestCount} requests sent, last response: ${responseTime}ms`
     );
   }
+}
 
-  // Immediate retry pattern (simulate real burst behavior)
-  if (elapsedTime < data.burstDuration * 0.5) {
-    // No sleep during first half of burst (maximum intensity)
-  } else {
-    // Slight delay in second half
-    sleep(0.001); // 1ms sleep
+// Recovery function
+export function recoveryRequest(data: SetupData) {
+  const url = `${baseUrl}${endpoint}`;
+
+  // Create payload using utility with recovery-specific data
+  const payload = createPayload("burst-recovery", {
+    phase: "recovery",
+    timestamp: Date.now(),
+  });
+
+  const params = createRequestParams("burst-recovery", endpoint, {
+    phase: "recovery",
+  });
+
+  const requestStart = Date.now();
+  const response = http.post(url, payload, params);
+  const requestEnd = Date.now();
+
+  const responseTime = requestEnd - requestStart;
+
+  // Check recovery performance
+  const success = check(response, {
+    "recovery status is 200": (r) => r.status === 200,
+    "recovery response time < 2s": (r) => r.timings.duration < 2000,
+    "recovery has body": (r) => {
+      if (!r.body) return false;
+      if (typeof r.body === "string") return r.body.length > 0;
+      if (r.body instanceof ArrayBuffer) return r.body.byteLength > 0;
+      return false;
+    },
+  });
+
+  recoveryTime.add(responseTime);
+
+  // Log recovery issues
+  if (!success) {
+    console.warn(
+      `Recovery issue: Status ${response.status}, Time: ${responseTime}ms`
+    );
   }
 }
 
-interface TeardownData {
-  recoveryTimes: number[];
-  avgRecoveryTime: number;
-  maxRecoveryTime: number;
-}
+export function teardown(data: SetupData) {
+  console.log("\n🔄 Burst test completed");
+  console.log(`Total burst requests attempted: ${requestCount}`);
+  console.log(`Expected RPS during burst: ${data.burstIntensity}`);
 
-export function teardown(data: SetupData): TeardownData {
-  console.log("\n🔄 Testing recovery after burst...");
+  // Additional post-test verification
+  console.log("\n🔍 Running post-burst health check...");
 
-  // Test recovery - send some requests after burst to see how quickly system recovers
-  const recoveryTests = 10;
-  const recoveryTimes: number[] = [];
+  const url = `${baseUrl}${endpoint}`;
+  const healthCheckPayload = createPayload("burst-health-check", {});
 
-  for (let i = 0; i < recoveryTests; i++) {
-    sleep(1); // Wait 1 second between recovery tests
-
-    const recoveryStart = Date.now();
-    const url = `${baseUrl}${endpoint}`;
-
-    // Create recovery payload using utility
-    const payload = createPayload("burst-recovery", {
-      recoveryTest: i + 1,
-    });
-
-    const response = http.post(url, payload, {
+  for (let i = 0; i < 5; i++) {
+    const response = http.post(url, healthCheckPayload, {
       headers: { "Content-Type": "application/json" },
     });
 
-    const recoveryEnd = Date.now();
-    const recoveryLatency = recoveryEnd - recoveryStart;
+    const isHealthy =
+      response.status === 200 && response.timings.duration < 1000;
+    console.log(
+      `Health check ${i + 1}: ${response.timings.duration.toFixed(2)}ms - ${
+        isHealthy ? "✅" : "❌"
+      }`
+    );
 
-    recoveryTimes.push(recoveryLatency);
-
-    if (response.status === 200) {
-      console.log(`Recovery test ${i + 1}: ${recoveryLatency}ms ✅`);
-    } else {
-      console.log(
-        `Recovery test ${i + 1}: ${recoveryLatency}ms ❌ (${response.status})`
-      );
-    }
+    if (i < 4) sleep(2); // Wait between health checks
   }
-
-  // Calculate recovery metrics
-  const avgRecoveryTime =
-    recoveryTimes.reduce((sum, time) => sum + time, 0) / recoveryTimes.length;
-  const maxRecoveryTime = Math.max(...recoveryTimes);
-
-  console.log(`\nRecovery Summary:`);
-  console.log(`Average recovery latency: ${avgRecoveryTime.toFixed(2)}ms`);
-  console.log(`Max recovery latency: ${maxRecoveryTime.toFixed(2)}ms`);
-
-  return {
-    recoveryTimes,
-    avgRecoveryTime,
-    maxRecoveryTime,
-  };
 }
 
 export function handleSummary(data: any) {
   const endpoint_name = endpoint.replace("/api/", "").replace("/", "-");
 
+  // Calculate actual test duration (including all phases)
+  const totalDuration = 35000 + data.setupData?.burstDuration + 60000; // warmup + burst + recovery
+
   // Create base summary using utility
-  const actualBurstDuration = safeMetric(data.state?.testRunDurationMs);
   const baseSummary = createBaseSummary(
     data,
     "burst-traffic",
     endpoint,
-    actualBurstDuration
+    totalDuration
   );
 
   // Calculate burst-specific metrics
-  const avgBurstLatency =
-    safeMetric(data.metrics.burst_response_time?.values?.avg) ||
-    baseSummary.avgLatency;
-  const p90BurstLatency =
-    safeMetric(data.metrics.burst_response_time?.values?.["p(90)"]) ||
-    baseSummary.p95Latency;
-  const p95BurstLatency =
-    safeMetric(data.metrics.burst_response_time?.values?.["p(95)"]) ||
-    baseSummary.p95Latency;
+  const burstPhaseData = data.metrics["http_req_duration{phase:burst}"];
+  const burstFailureRate =
+    safeMetric(data.metrics["http_req_failed{phase:burst}"]?.values?.rate) *
+    100;
 
-  const targetRps = burstRequests / parseFloat(burstDuration.replace("s", ""));
-  const actualRps = (baseSummary.requests / actualBurstDuration) * 1000;
-  const burstEfficiency = (actualRps / targetRps) * 100;
+  const expectedRequests =
+    burstIntensity * parseInt(burstDuration.replace("s", ""));
+  const actualBurstRequests = safeMetric(
+    data.metrics["http_reqs{phase:burst}"]?.values?.count
+  );
+  const actualRps =
+    actualBurstRequests / parseInt(burstDuration.replace("s", ""));
+  const burstEfficiency = (actualRps / burstIntensity) * 100;
+
+  // Calculate recovery metrics
+  const avgRecoveryTime = safeMetric(data.metrics.recovery_time?.values?.avg);
+  const p90BurstLatency = safeMetric(
+    data.metrics.burst_response_time?.values?.["p(90)"]
+  );
+  const p95BurstLatency = safeMetric(
+    data.metrics.burst_response_time?.values?.["p(95)"]
+  );
 
   // Extended summary with burst-specific data
   const summary = {
     ...baseSummary,
-    targetBurstRequests: burstRequests,
-    targetBurstDuration: parseFloat(burstDuration.replace("s", "")) * 1000,
-    actualBurstDuration: actualBurstDuration,
-    actualRequests: baseSummary.requests,
-    targetRps: targetRps,
+    targetBurstRequests: expectedRequests,
+    targetBurstDuration: parseInt(burstDuration.replace("s", "")) * 1000,
+    actualBurstDuration: parseInt(burstDuration.replace("s", "")) * 1000,
+    actualRequests: actualBurstRequests,
+    targetRps: burstIntensity,
     actualRps: actualRps,
     burstEfficiency: burstEfficiency,
-    avgBurstLatency: avgBurstLatency,
+    burstFailureRate: burstFailureRate,
+    avgBurstLatency: safeMetric(burstPhaseData?.values?.avg),
     p90Latency: p90BurstLatency,
     p95BurstLatency: p95BurstLatency,
+    avgRecoveryTime: avgRecoveryTime,
     metadata: {
       ...baseSummary.metadata,
-      burstIntensity:
-        burstRequests / parseFloat(burstDuration.replace("s", "")),
+      burstIntensity: burstIntensity,
+      expectedRequests: expectedRequests,
+      phases: ["warmup", "burst", "recovery"],
     },
   };
 
   // Log results using utility
   logBasicResults(baseSummary, "Burst Traffic Test Results");
-  console.log(`Target Burst: ${burstRequests} requests in ${burstDuration}`);
-  console.log(
-    `Actual: ${baseSummary.requests} requests in ${(
-      actualBurstDuration / 1000
-    ).toFixed(2)}s`
-  );
-  console.log(
-    `Target RPS: ${targetRps.toFixed(2)}, Actual RPS: ${actualRps.toFixed(2)}`
-  );
-  console.log(`Burst Efficiency: ${burstEfficiency.toFixed(1)}%`);
-  console.log(`Average Burst Latency: ${avgBurstLatency.toFixed(2)}ms`);
-  console.log(`P90 Burst Latency: ${p90BurstLatency.toFixed(2)}ms`);
+  console.log(`\n🚀 Burst Performance Analysis:`);
+  console.log(`Target RPS during burst: ${burstIntensity}`);
+  console.log(`Actual RPS during burst: ${actualRps.toFixed(2)}`);
+  console.log(`Burst efficiency: ${burstEfficiency.toFixed(1)}%`);
+  console.log(`Burst failure rate: ${burstFailureRate.toFixed(1)}%`);
+  console.log(`Average burst latency: ${summary.avgBurstLatency.toFixed(2)}ms`);
+  console.log(`P95 burst latency: ${p95BurstLatency.toFixed(2)}ms`);
+  console.log(`Average recovery time: ${avgRecoveryTime.toFixed(2)}ms`);
 
-  if (burstEfficiency < 80) {
-    console.log("\n⚠️  Burst Performance Issues:");
+  // Performance assessment
+  if (burstEfficiency >= 80 && burstFailureRate <= 10) {
+    console.log("\n✅ Burst handling performance is excellent");
+  } else if (burstEfficiency >= 60 && burstFailureRate <= 20) {
+    console.log("\n⚠️  Burst handling performance is acceptable");
+  } else {
+    console.log("\n❌ Burst handling performance needs improvement");
     console.log(
-      `   • Burst efficiency: ${burstEfficiency.toFixed(1)}% (target: 80%+)`
-    );
-    console.log("   • System may not be handling burst traffic optimally");
-  }
-
-  if (baseSummary.errorRate > 15) {
-    console.log("\n⚠️  High Error Rate During Burst:");
-    console.log(
-      `   • Error rate: ${baseSummary.errorRate.toFixed(2)}% (threshold: 15%)`
-    );
-    console.log(
-      "   • Consider reducing burst intensity or investigating capacity limits"
+      "   • Consider optimizing connection pooling, request handling, or scaling strategy"
     );
   }
 

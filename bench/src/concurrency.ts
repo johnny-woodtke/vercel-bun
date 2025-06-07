@@ -16,8 +16,7 @@ import {
 
 // Configuration using common utilities
 const config = getCommonConfig();
-const { baseUrl, endpoint, testDuration } = config;
-const maxConnections = config.maxConnections || 1000;
+const { baseUrl, endpoint, testDuration, maxConnections } = config;
 
 // Custom metrics using common utilities plus concurrency-specific metrics
 const metrics = createCommonMetrics();

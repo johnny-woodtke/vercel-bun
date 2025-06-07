@@ -14,17 +14,7 @@ import {
 
 // Configuration using common utilities
 const config = getCommonConfig();
-const {
-  baseUrl,
-  endpoint,
-  testDuration: configTestDuration,
-  rpsTarget,
-  thinkTime: configThinkTime,
-} = config;
-
-// Ensure variables have default values
-const testDuration = configTestDuration || "60s";
-const thinkTime = configThinkTime || 0;
+const { baseUrl, endpoint, testDuration, rpsTarget, thinkTime } = config;
 
 // Custom metrics using common utilities
 const metrics = createCommonMetrics();

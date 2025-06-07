@@ -59,19 +59,37 @@ jobs:
     env:
       BENCH_API_DOMAIN: ${{ inputs.bench_api_domain }}
       ENDPOINT: ${{ inputs.endpoint }}
-      DURATION: "60s"
+      # Warm latency test parameters - increased duration for more stable measurements
+      DURATION: "90s"
       RPS: "100"
-      MAX_RPS: "1000"
-      MAX_CONNECTIONS: "1000"
+
+      # Throughput test parameters - more aggressive testing
+      MAX_RPS: "1500"
+      RAMP_UP_DURATION: "3m"
+      SUSTAIN_DURATION: "5m"
+
+      # Concurrency test parameters - higher load testing
+      MAX_CONNECTIONS: "1500"
+
+      # Payload size test parameters - multiple sizes for comprehensive testing
       PAYLOAD_SIZE: "1024"
-      ITERATIONS: "50"
-      BURST_REQUESTS: "1000"
-      BURST_DURATION: "2s"
-      RAMP_UP_DURATION: "2m"
-      SUSTAIN_DURATION: "3m"
+      PAYLOAD_SIZES: "100,1024,10240,102400" # 100B, 1KB, 10KB, 100KB
+      ITERATIONS: "100"
+
+      # Burst traffic parameters - more realistic burst patterns
+      BURST_REQUESTS: "500"
+      BURST_DURATION: "10s"
+      BURST_INTENSITY: "100" # RPS during burst
+
+      # Cold start parameters - more comprehensive testing
+      COLD_START_WAIT_TIME_MINS: "3"
+      COLD_START_ITERATIONS: "10"
+      COLD_START_WARMUP_REQUESTS: "5"
+
+      # General test parameters
       THINK_TIME: "0"
-      COLD_START_WAIT_TIME_MINS: "5"
-      COLD_START_ITERATIONS: "5"
+      HTTP_TIMEOUT: "30s"
+      CONNECTION_TIMEOUT: "10s"
 
     steps:
       - name: Checkout code
@@ -106,19 +124,19 @@ jobs:
           echo "🔥 Preparing endpoint"
           bun run bench:prepare
 
-      - name: Run Burst Traffic Test
-        if: ${{ inputs.run_burst_traffic == true }}
+      - name: Run Warm Latency Test
+        if: ${{ inputs.run_warm_latency == true }}
         run: |
           cd bench
-          echo "🚀 Running Burst Traffic Test"
-          bun run bench:burst
+          echo "🔥 Running Warm Latency Test"
+          bun run bench:warm
 
-      - name: Run Cold Start Test
-        if: ${{ inputs.run_cold_start == true }}
+      - name: Run Throughput Test
+        if: ${{ inputs.run_throughput == true }}
         run: |
           cd bench
-          echo "❄️ Running Cold Start Test"
-          bun run bench:cold-start
+          echo "🚀 Running Throughput Test"
+          bun run bench:throughput
 
       - name: Run Concurrency Test
         if: ${{ inputs.run_concurrency == true }}
@@ -134,19 +152,19 @@ jobs:
           echo "📦 Running Payload Size Test"
           bun run bench:payload
 
-      - name: Run Throughput Test
-        if: ${{ inputs.run_throughput == true }}
+      - name: Run Cold Start Test
+        if: ${{ inputs.run_cold_start == true }}
         run: |
           cd bench
-          echo "🚀 Running Throughput Test"
-          bun run bench:throughput
+          echo "❄️ Running Cold Start Test"
+          bun run bench:cold-start
 
-      - name: Run Warm Latency Test
-        if: ${{ inputs.run_warm_latency == true }}
+      - name: Run Burst Traffic Test
+        if: ${{ inputs.run_burst_traffic == true }}
         run: |
           cd bench
-          echo "🔥 Running Warm Latency Test"
-          bun run bench:warm
+          echo "🚀 Running Burst Traffic Test"
+          bun run bench:burst
 
       - name: Upload benchmark results
         if: always()
@@ -157,16 +175,24 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
+      - name: Generate Summary Report
+        if: always()
+        run: |
+          cd bench
+          echo "📊 Generating comprehensive benchmark summary..."
+          bun run bench:summary || echo "Summary generation failed, continuing..."
+
       - name: Summary
         run: |
           echo "✅ Benchmark tests completed!"
           echo "Tests run:"
-          ${{ inputs.run_burst_traffic == true && 'echo "  - Burst Traffic Test"' || 'echo ""' }}
-          ${{ inputs.run_cold_start == true && 'echo "  - Cold Start Test"' || 'echo ""' }}
-          ${{ inputs.run_concurrency == true && 'echo "  - Concurrency Test"' || 'echo ""' }}
-          ${{ inputs.run_payload_size == true && 'echo "  - Payload Size Test"' || 'echo ""' }}
-          ${{ inputs.run_throughput == true && 'echo "  - Throughput Test"' || 'echo ""' }}
-          ${{ inputs.run_warm_latency == true && 'echo "  - Warm Latency Test"' || 'echo ""' }}
+          ${{ inputs.run_warm_latency == true && 'echo "  - Warm Latency Test (90s duration)"' || 'echo ""' }}
+          ${{ inputs.run_throughput == true && 'echo "  - Throughput Test (up to 1500 RPS)"' || 'echo ""' }}
+          ${{ inputs.run_concurrency == true && 'echo "  - Concurrency Test (up to 1500 connections)"' || 'echo ""' }}
+          ${{ inputs.run_payload_size == true && 'echo "  - Payload Size Test (100B to 100KB)"' || 'echo ""' }}
+          ${{ inputs.run_cold_start == true && 'echo "  - Cold Start Test (10 iterations)"' || 'echo ""' }}
+          ${{ inputs.run_burst_traffic == true && 'echo "  - Burst Traffic Test (improved pattern)"' || 'echo ""' }}
 
           echo ""
           echo "📁 Results files have been uploaded as artifacts and can be downloaded from the Actions tab."
+          echo "🔍 Look for individual test result JSON files and summary reports."

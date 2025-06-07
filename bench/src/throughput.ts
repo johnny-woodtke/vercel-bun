@@ -14,17 +14,7 @@ import {
 
 // Configuration using common utilities
 const config = getCommonConfig();
-const {
-  baseUrl,
-  endpoint,
-  maxRps,
-  rampUpDuration: configRampUpDuration,
-  sustainDuration: configSustainDuration,
-} = config;
-
-// Ensure durations have default values
-const rampUpDuration = configRampUpDuration || "2m";
-const sustainDuration = configSustainDuration || "3m";
+const { baseUrl, endpoint, maxRps, rampUpDuration, sustainDuration } = config;
 
 // Custom metrics using common utilities
 const metrics = createCommonMetrics();
@@ -73,7 +63,7 @@ export default function () {
 
   // Track different types of errors with context
   if (!checkResult.overall) {
-    logRequestError(response, `RPS ~${__ENV.CURRENT_RPS || "unknown"}`);
+    logRequestError(response, "throughput-test");
   }
 }
 
