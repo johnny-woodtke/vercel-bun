@@ -39,6 +39,14 @@ describe("E2E API Tests - Base Routes", () => {
       );
       expect(response.headers.get("content-type")).toContain("application/xml");
     });
+
+    it("should return a void response", async () => {
+      const { data, status, response } = await api.base.content.void.get();
+
+      expect(status).toBe(200);
+      expect(data).toBeUndefined();
+      expect(response.headers.get("content-type")).toBeUndefined();
+    });
   });
 
   describe("/base/headers", () => {

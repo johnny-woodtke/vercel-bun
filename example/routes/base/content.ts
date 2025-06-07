@@ -42,4 +42,10 @@ export const contentRoutes = new Elysia({ prefix: "/content" })
         ),
       },
     }
-  );
+  )
+
+  .get("/void", () => {}, {
+    response: {
+      200: t.Void(),
+    },
+  });

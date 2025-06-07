@@ -2,10 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/bun.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.1"
+      "runtime": "@godsreveal/vercel-bun@0.2.2-alpha.1"
     },
     "api/bun/workload.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.1"
+      "runtime": "@godsreveal/vercel-bun@0.2.2-alpha.1"
     }
   }
 }

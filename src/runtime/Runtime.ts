@@ -90,6 +90,14 @@ export const Runtime = {
       method: "GET",
     });
 
+    // Get the payload promise
+    const payloadPromise: Promise<GetNextInvocationResponsePayload> = res
+      .json()
+      .then((res) => {
+        res.body = JSON.parse(res.body);
+        return res;
+      });
+
     // Set the AWS request ID
     awsRequestId = res.headers.get(lambdaRuntimeAwsRequestIdHeader);
 
@@ -105,13 +113,8 @@ export const Runtime = {
       throw new Error("No AWS request ID found");
     }
 
-    // Parse the response body
-    const payload: GetNextInvocationResponsePayload = await res
-      .json()
-      .then((res) => {
-        res.body = JSON.parse(res.body);
-        return res;
-      });
+    // Get the payload
+    const payload = await payloadPromise;
 
     // Return the payload transformed into a Request object and the AWS request ID
     return {
@@ -140,13 +143,17 @@ export const Runtime = {
     response: Response
   ): Promise<void> {
     // Convert the response body to a base64 string
-    const body = await response
-      .arrayBuffer()
-      .then((buffer) =>
-        buffer.byteLength > 0
-          ? Buffer.from(buffer).toString(defaultBodyEncoding)
-          : undefined
-      );
+    const { body, encoding } = await response.arrayBuffer().then((buffer) =>
+      buffer.byteLength > 0
+        ? {
+            body: Buffer.from(buffer).toString(defaultBodyEncoding),
+            encoding: defaultBodyEncoding,
+          }
+        : {
+            body: undefined,
+            encoding: undefined,
+          }
+    );
 
     // Post the response to the runtime API
     const res = await fetch(invocationResponseUrl(awsRequestId), {
@@ -157,7 +164,7 @@ export const Runtime = {
       body: JSON.stringify({
         statusCode: response.status,
         headers: response.headers.toJSON(),
-        encoding: body ? defaultBodyEncoding : undefined,
+        encoding,
         body,
       } satisfies PostInvocationResponsePayload),
     });
