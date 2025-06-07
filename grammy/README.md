@@ -139,7 +139,7 @@ This bot is configured to deploy to [Vercel](https://vercel.com/) as serverless 
    Vercel will automatically deploy your bot. After deployment, set the webhook:
 
    ```bash
-   curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://your-app.vercel.app/api/bot"
+   curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://<YOUR_DOMAIN>/api/bot"
    ```
 
 ### Vercel Configuration
