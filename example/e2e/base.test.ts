@@ -44,8 +44,8 @@ describe("E2E API Tests - Base Routes", () => {
       const { data, status, response } = await api.base.content.void.get();
 
       expect(status).toBe(200);
-      expect(data).toBeUndefined();
-      expect(response.headers.get("content-type")).toBeUndefined();
+      expect(data).toEqual("" as unknown as void);
+      expect(response.headers.get("content-type")).toBeNull();
     });
   });
 
