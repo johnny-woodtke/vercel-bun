@@ -9,8 +9,7 @@ const handlerPath = resolve(process.cwd(), process.env._HANDLER ?? "");
 export async function getHandler(): Promise<Handler> {
   if (handler) return handler;
 
-  const mod = await import(handlerPath);
-  handler = mod.default;
+  handler = await import(handlerPath).then((mod) => mod.default);
 
   if (typeof handler !== "function") {
     throw new Error(

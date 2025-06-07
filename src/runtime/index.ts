@@ -1,48 +1,42 @@
 import { getHandler } from "./getHandler";
 import { Runtime } from "./Runtime";
+import type { ErrorInvocationBody } from "./types";
 
 async function processEvents() {
   while (true) {
     try {
-      // Get the next event
-      const { request, awsRequestId } = await Runtime.getNextInvocation();
+      // Get the next event and the handler
+      const [{ request, awsRequestId }, handler] = await Promise.all([
+        Runtime.getNextInvocation(),
+        getHandler(),
+      ]);
 
-      try {
-        // Get the handler
-        const handler = await getHandler();
+      // Run user code and get the response
+      const response = await handler(request);
 
-        // Run user code and get the response
-        const response = await handler(request);
-
-        // Parse the response
-        await Runtime.postInvocationResponse(awsRequestId, response);
-      } catch (e) {
-        // Cast the error to an Error
-        const error = e as Error;
-
-        // Log the error
-        console.error("User code error:", error.message);
-
-        // Invoke the error
-        await Runtime.postInvocationError(awsRequestId, {
-          errorMessage: error.message,
-          errorType: error.name,
-          stackTrace: error.stack?.split("\n") ?? [],
-        });
-      }
+      // Parse the response
+      await Runtime.postInvocationResponse(awsRequestId, response);
     } catch (e) {
       // Cast the error to an Error
       const error = e as Error;
 
       // Log the error
-      console.error("Lambda runtime error:", error.message);
+      console.error("Something went wrong:", error.message);
 
-      // Post the initialization error (since we don't have an AWS request ID)
-      await Runtime.postInitializationError({
+      // Get the AWS request ID
+      const awsRequestId = Runtime.getAwsRequestId();
+
+      // Create the error payload
+      const errorPayload: ErrorInvocationBody = {
         errorMessage: error.message,
         errorType: error.name,
         stackTrace: error.stack?.split("\n") ?? [],
-      });
+      };
+
+      // Post the error to the runtime API
+      await (awsRequestId
+        ? Runtime.postInvocationError(awsRequestId, errorPayload)
+        : Runtime.postInitializationError(errorPayload));
     }
   }
 }

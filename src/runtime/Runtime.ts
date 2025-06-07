@@ -51,12 +51,24 @@ const lambdaRuntimeFunctionErrorTypeHeader =
   "Lambda-Runtime-Function-Error-Type" as const;
 
 /**
+ * References the latest AWS Request ID
+ */
+let awsRequestId: string | null = null;
+
+/**
  * Implements the AWS Lambda Runtime API.
  *
  * @see https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html
  * @see https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html
  */
 export const Runtime = {
+  /**
+   * Get the AWS Request ID
+   */
+  getAwsRequestId(): string | null {
+    return awsRequestId;
+  },
+
   /**
    * Gets the next invocation from the runtime API and converts it into a Request object.
    * Also returns the AWS request ID.
@@ -65,10 +77,16 @@ export const Runtime = {
     request: Request;
     awsRequestId: string;
   }> {
+    // Clear the AWS request ID
+    awsRequestId = null;
+
     // Get the next invocation from the runtime API
     const res = await fetch(nextInvocationUrl, {
       method: "GET",
     });
+
+    // Set the AWS request ID
+    awsRequestId = res.headers.get(lambdaRuntimeAwsRequestIdHeader);
 
     // Throw an error if the response is not OK
     if (!res.ok) {
@@ -77,8 +95,7 @@ export const Runtime = {
       );
     }
 
-    // Get the AWS request ID from the response headers
-    const awsRequestId = res.headers.get(lambdaRuntimeAwsRequestIdHeader);
+    // Ensure the AWS request ID is set
     if (!awsRequestId) {
       throw new Error("No AWS request ID found");
     }
