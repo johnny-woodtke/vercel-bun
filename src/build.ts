@@ -35,7 +35,6 @@ export const build: BuildV3 = async function ({
   const { href } = new URL(
     `https://bun.sh/download/${bunVersion}/linux/${arch}?avx2=true`
   );
-  console.log(`Downloading bun binary: ${href}`);
 
   // Download the Bun binary
   const res = await fetch(href, {
@@ -49,6 +48,7 @@ export const build: BuildV3 = async function ({
     const reason = await res.text();
     throw new Error(`Failed to download bun binary: ${reason}`);
   }
+  console.log(`Downloaded bun binary: ${href}`);
 
   // Load the archive
   let archive = await JSZip.loadAsync(await res.arrayBuffer()).catch((e) => {
@@ -116,7 +116,7 @@ export const build: BuildV3 = async function ({
     handler: entrypoint,
     runtime: await getProvidedRuntime(),
   });
-  console.log(`Created Lambda with bun@${bunVersion} runtime`);
+  console.log(`Created Lambda with bun@${bunVersion} runtime\n`);
 
   // Return the Lambda function
   return {
