@@ -22,6 +22,9 @@ export const build: BuildV3 = async function ({
   workPath,
   meta,
 }) {
+  // Log the entrypoint
+  console.log(`\nBuilding entrypoint: ${entrypoint}`);
+
   // Determine architecture - Vercel's AWS Lambda runs on x64 by default
   const arch = process.arch === "arm64" ? "aarch64" : buildConfig.defaultArch;
 
@@ -41,11 +44,6 @@ export const build: BuildV3 = async function ({
     },
   });
 
-  // Notify if the Bun binary was downloaded from a different URL
-  if (res.url !== href) {
-    console.log(`Downloaded bun binary: ${res.url}`);
-  }
-
   // Check if res is OK
   if (!res.ok) {
     const reason = await res.text();
@@ -57,7 +55,6 @@ export const build: BuildV3 = async function ({
     console.log(`Failed to load bun binary: ${(e as Error).message}`);
     throw e;
   });
-  console.log(`Extracted archive: ${Object.keys(archive.files)}`);
 
   // Get bun from archive
   const bun = archive.filter(
@@ -104,7 +101,11 @@ export const build: BuildV3 = async function ({
   // Download the user files
   const userFiles: Files = await download(files, workPath, meta);
   console.log("Downloaded user files");
-  console.log(Object.keys(userFiles).join("\n"));
+  console.log(
+    Object.keys(userFiles)
+      .map((file) => `  ${file}`)
+      .join("\n")
+  );
 
   // Create Lambda
   const lambda = new Lambda({
