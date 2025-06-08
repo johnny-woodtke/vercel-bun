@@ -12,18 +12,16 @@ import {
   getCommonConfig,
   safeMetric,
   saveResults,
-} from "./k6-utils.ts";
+} from "./utils.ts";
 
 // Configuration using common utilities
-const config = getCommonConfig();
 const {
   baseUrl,
   endpoint,
   coldStartWaitTimeMins,
   coldStartIterations,
-  coldStartWarmupRequests,
-} = config;
-const warmupRequests = coldStartWarmupRequests;
+  coldStartWarmupRequests: warmupRequests,
+} = getCommonConfig();
 
 // Custom metrics using common utilities plus cold start specific metrics
 const metrics = createCommonMetrics();

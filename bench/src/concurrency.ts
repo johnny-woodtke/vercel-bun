@@ -12,11 +12,10 @@ import {
   logBasicResults,
   safeMetric,
   saveResults,
-} from "./k6-utils.ts";
+} from "./utils.ts";
 
 // Configuration using common utilities
-const config = getCommonConfig();
-const { baseUrl, endpoint, testDuration, maxConnections } = config;
+const { baseUrl, endpoint, testDuration, maxConnections } = getCommonConfig();
 
 // Custom metrics using common utilities plus concurrency-specific metrics
 const metrics = createCommonMetrics();

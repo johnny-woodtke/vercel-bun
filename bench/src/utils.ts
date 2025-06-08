@@ -13,7 +13,6 @@ export interface BenchConfig {
   rpsTarget: number;
   maxRps: number;
   maxConnections: number;
-  payloadSize: number;
   payloadSizes: number[];
   iterations: number;
   burstRequests: number;
@@ -30,31 +29,41 @@ export interface BenchConfig {
 }
 
 export function getCommonConfig(): BenchConfig {
-  // Parse payload sizes from environment variable
-  const payloadSizesStr = __ENV.PAYLOAD_SIZES || "100,1024,10240,102400";
-  const payloadSizes = payloadSizesStr
-    .split(",")
-    .map((size) => parseInt(size.trim()));
-
   return {
+    // Endpoint config
     baseUrl: __ENV.BENCH_API_DOMAIN || "https://vercel-bun-bench.vercel.app",
     endpoint: __ENV.ENDPOINT || "/api/bun",
+
+    // Warm latency
     testDuration: __ENV.DURATION || "90s",
     rpsTarget: parseInt(__ENV.RPS || "100"),
+
+    // Throughput
     maxRps: parseInt(__ENV.MAX_RPS || "1500"),
+    rampUpDuration: __ENV.RAMP_UP_DURATION || "3m",
+    sustainDuration: __ENV.SUSTAIN_DURATION || "5m",
+
+    // Concurrency
     maxConnections: parseInt(__ENV.MAX_CONNECTIONS || "1500"),
-    payloadSize: parseInt(__ENV.PAYLOAD_SIZE || "1024"),
-    payloadSizes: payloadSizes,
+
+    // Payload size
+    payloadSizes: (__ENV.PAYLOAD_SIZES || "100,1024,10240,102400")
+      .split(",")
+      .map((size) => parseInt(size.trim())),
     iterations: parseInt(__ENV.ITERATIONS || "100"),
+
+    // Burst traffic
     burstRequests: parseInt(__ENV.BURST_REQUESTS || "500"),
     burstDuration: __ENV.BURST_DURATION || "10s",
     burstIntensity: parseInt(__ENV.BURST_INTENSITY || "100"),
-    rampUpDuration: __ENV.RAMP_UP_DURATION || "3m",
-    sustainDuration: __ENV.SUSTAIN_DURATION || "5m",
-    thinkTime: parseFloat(__ENV.THINK_TIME || "0"),
+
+    // Cold start
     coldStartWaitTimeMins: parseFloat(__ENV.COLD_START_WAIT_TIME_MINS || "3"),
     coldStartIterations: parseInt(__ENV.COLD_START_ITERATIONS || "10"),
     coldStartWarmupRequests: parseInt(__ENV.COLD_START_WARMUP_REQUESTS || "5"),
+
+    // General
+    thinkTime: parseFloat(__ENV.THINK_TIME || "0"),
     httpTimeout: __ENV.HTTP_TIMEOUT || "30s",
     connectionTimeout: __ENV.CONNECTION_TIMEOUT || "10s",
   };

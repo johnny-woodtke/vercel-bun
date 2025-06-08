@@ -13,11 +13,10 @@ import {
   logBasicResults,
   safeMetric,
   saveResults,
-} from "./k6-utils.ts";
+} from "./utils.ts";
 
 // Configuration using common utilities
-const config = getCommonConfig();
-const { baseUrl, endpoint, iterations, payloadSizes } = config;
+const { baseUrl, endpoint, iterations, payloadSizes } = getCommonConfig();
 
 // Custom metrics using common utilities plus payload-specific metrics
 const metrics = createCommonMetrics();
@@ -79,26 +78,46 @@ export function setup() {
   return {
     payloadSizes: payloadSizes,
     iterations: iterations,
+    testResults: testResults,
   };
 }
 
-export default function () {
+export default function (data: any) {
   const url = `${baseUrl}${endpoint}`;
 
-  // Calculate which payload size to use for this iteration
-  const sizeIndex = Math.floor(__ITER / iterations);
-  const currentSize = payloadSizes[sizeIndex];
-  const iterationWithinSize = (__ITER % iterations) + 1;
+  // Use data from setup or fallback to global config
+  const setupPayloadSizes = data?.payloadSizes || payloadSizes;
+  const setupIterations = data?.iterations || iterations;
 
-  if (currentSize === undefined || !testResults[currentSize]) {
-    console.error(`❌ Invalid payload size: ${currentSize}`);
+  // Calculate which payload size to use for this iteration
+  const sizeIndex = Math.floor(__ITER / setupIterations);
+  const currentSize = setupPayloadSizes[sizeIndex];
+  const iterationWithinSize = (__ITER % setupIterations) + 1;
+
+  if (currentSize === undefined) {
+    console.error(
+      `❌ Invalid payload size index: ${sizeIndex}, iteration: ${__ITER}`
+    );
     return;
+  }
+
+  // Ensure testResults entry exists for this size
+  if (!testResults[currentSize]) {
+    testResults[currentSize] = {
+      size: currentSize,
+      sizeFormatted: formatBytes(currentSize),
+      iterations: 0,
+      responses: [],
+      throughputValues: [],
+      processingTimes: [],
+      errors: 0,
+    };
   }
 
   console.log(
     `📦 Testing ${formatBytes(
       currentSize
-    )} - Iteration ${iterationWithinSize}/${iterations}`
+    )} - Iteration ${iterationWithinSize}/${setupIterations}`
   );
 
   // Generate payload of specific size

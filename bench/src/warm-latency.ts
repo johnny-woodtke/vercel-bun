@@ -10,11 +10,11 @@ import {
   getCommonConfig,
   logBasicResults,
   saveResults,
-} from "./k6-utils.ts";
+} from "./utils.ts";
 
 // Configuration using common utilities
-const config = getCommonConfig();
-const { baseUrl, endpoint, testDuration, rpsTarget, thinkTime } = config;
+const { baseUrl, endpoint, testDuration, rpsTarget, thinkTime } =
+  getCommonConfig();
 
 // Custom metrics using common utilities
 const metrics = createCommonMetrics();

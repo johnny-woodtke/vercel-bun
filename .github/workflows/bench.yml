@@ -57,8 +57,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Endpoint config
       BENCH_API_DOMAIN: ${{ inputs.bench_api_domain }}
       ENDPOINT: ${{ inputs.endpoint }}
+
       # Warm latency test parameters - increased duration for more stable measurements
       DURATION: "90s"
       RPS: "100"
@@ -72,7 +74,6 @@ jobs:
       MAX_CONNECTIONS: "1500"
 
       # Payload size test parameters - multiple sizes for comprehensive testing
-      PAYLOAD_SIZE: "1024"
       PAYLOAD_SIZES: "100,1024,10240,102400" # 100B, 1KB, 10KB, 100KB
       ITERATIONS: "100"
 

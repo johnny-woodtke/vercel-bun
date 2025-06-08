@@ -12,12 +12,11 @@ import {
   logBasicResults,
   safeMetric,
   saveResults,
-} from "./k6-utils.ts";
+} from "./utils.ts";
 
 // Configuration using common utilities
-const config = getCommonConfig();
 const { baseUrl, endpoint, burstRequests, burstDuration, burstIntensity } =
-  config;
+  getCommonConfig();
 
 // Custom metrics using common utilities plus burst-specific metrics
 const metrics = createCommonMetrics();
