@@ -1,4 +1,4 @@
-# grammY Telegram Bot
+# grammY – Vercel Bun Runtime Example
 
 A Telegram bot built with the [grammY framework](https://grammy.dev/) and deployed to Vercel using the Bun runtime.
 

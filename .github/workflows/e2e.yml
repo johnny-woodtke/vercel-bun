@@ -3,13 +3,13 @@ name: E2E Tests
 on:
   workflow_dispatch:
     inputs:
-      example_api_domain:
-        description: "Example API domain for E2E tests"
+      next_api_domain:
+        description: "Next.js + ElysiaJS domain for E2E tests"
         required: false
         default: "https://vercel-bun-nine.vercel.app"
         type: string
-      bench_api_domain:
-        description: "Bench API domain for E2E tests"
+      vanilla_api_domain:
+        description: "Vanilla domain for E2E tests"
         required: false
         default: "https://vercel-bun-bench.vercel.app"
         type: string
@@ -33,5 +33,5 @@ jobs:
       - name: Run E2E tests
         run: bun run e2e
         env:
-          E2E_EXAMPLE_API_DOMAIN: ${{ inputs.example_api_domain || 'https://vercel-bun-nine.vercel.app' }}
-          E2E_BENCH_API_DOMAIN: ${{ inputs.bench_api_domain || 'https://vercel-bun-bench.vercel.app' }}
+          E2E_NEXT_API_DOMAIN: ${{ inputs.next_api_domain || 'https://vercel-bun-nine.vercel.app' }}
+          E2E_VANILLA_API_DOMAIN: ${{ inputs.vanilla_api_domain || 'https://vercel-bun-bench.vercel.app' }}

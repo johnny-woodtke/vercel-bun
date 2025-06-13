@@ -1,4 +1,4 @@
-# Next.js + Vercel Bun Runtime Example
+# Next.js + ElysiaJS - Vercel Bun Runtime Example
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) that demonstrates the **vercel-bun** custom runtime for Vercel serverless functions.
 
@@ -313,7 +313,7 @@ bun test --coverage
 
 **Test Environment Requirements:**
 
-- E2E_EXAMPLE_API_DOMAIN environment variable configured to domain of server (i.e., `http://localhost:3000`)
+- E2E_NEXT_API_DOMAIN environment variable configured to domain of server (i.e., `http://localhost:3000`)
 - Redis instance (local or remote via `REDIS_URL`)
 - Cloudflare R2 bucket with proper credentials
 - All environment variables configured as per setup instructions

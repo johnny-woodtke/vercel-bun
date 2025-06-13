@@ -98,9 +98,13 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/docs/git#deploying-
 
 ## Examples
 
-See the [example](./example) directory for a complete example of using this runtime with a Next.js project.
+See the [examples](./examples) directory for several examples:
 
-**[Live Bun Redis/S3 Client Demo](https://vercel-bun-nine.vercel.app)**
+- **[Vanilla](https://vercel-bun-bench.vercel.app)**
+
+- **[Next.js + ElysiaJS](https://vercel-bun-nine.vercel.app)**
+
+- **[grammY](https://vercel-bun-grammy.vercel.app)**
 
 ## Next Steps
 

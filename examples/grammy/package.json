@@ -1,11 +1,12 @@
 {
-  "name": "grammy",
+  "name": "grammy-example",
   "module": "index.ts",
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "dev": "bun run --watch api/bot.ts",
-    "dev:serve": "dotenv -e .env -- sh -c 'ngrok http $API_PORT'"
+    "dev:serve": "dotenv -e .env -- sh -c 'ngrok http $API_PORT'",
+    "set-webhook-url": "bun run scripts/set-webhook-url.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.2.15",
