@@ -100,15 +100,15 @@ Deploy your GitHub repository to [Vercel](https://vercel.com/docs/git#deploying-
 
 See the [examples](./examples) directory for several examples:
 
-- **[Vanilla](https://vercel-bun-bench.vercel.app)**
+- **[Vanilla](https://vercel-bun-bench.vercel.app)** - A comprehensive benchmarking suite comparing Bun and Node.js runtime performance on Vercel serverless functions, including cold start, throughput, concurrency, and payload size tests.
 
-- **[Next.js + ElysiaJS](https://vercel-bun-nine.vercel.app)**
+- **[Next.js + ElysiaJS](https://vercel-bun-nine.vercel.app)** - A full-stack Next.js application demonstrating high-performance serverless functions with Elysia REST API, Redis integration, Cloudflare R2 image uploads, and end-to-end type safety using Eden Treaty.
 
-- **[grammY](https://vercel-bun-grammy.vercel.app)**
+- **[grammY](https://vercel-bun-grammy.vercel.app)** - A Telegram bot built with the grammY framework, showcasing how to deploy chatbots as serverless functions using the Bun runtime with webhook support and modular command structure.
 
 ## Next Steps
 
-- [ ] **Framework Examples**: Add more framework examples (grammY, Hono, Fastify, etc.).
+- [ ] **Framework Examples**: Add more framework examples (Hono, Fastify, etc.).
 
 ## Goals
 
