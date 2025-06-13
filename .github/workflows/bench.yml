@@ -111,59 +111,59 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd bench
+          cd examples/vanilla
           bun install
 
       - name: Create results directory
         run: |
-          cd bench
+          cd examples/vanilla
           mkdir -p results
 
       - name: Prepare endpoint
         run: |
-          cd bench
+          cd examples/vanilla
           echo "🔥 Preparing endpoint"
           bun run bench:prepare
 
       - name: Run Warm Latency Test
         if: ${{ inputs.run_warm_latency == true }}
         run: |
-          cd bench
+          cd examples/vanilla
           echo "🔥 Running Warm Latency Test"
           bun run bench:warm
 
       - name: Run Throughput Test
         if: ${{ inputs.run_throughput == true }}
         run: |
-          cd bench
+          cd examples/vanilla
           echo "🚀 Running Throughput Test"
           bun run bench:throughput
 
       - name: Run Concurrency Test
         if: ${{ inputs.run_concurrency == true }}
         run: |
-          cd bench
+          cd examples/vanilla
           echo "⚡ Running Concurrency Test"
           bun run bench:concurrency
 
       - name: Run Payload Size Test
         if: ${{ inputs.run_payload_size == true }}
         run: |
-          cd bench
+          cd examples/vanilla
           echo "📦 Running Payload Size Test"
           bun run bench:payload
 
       - name: Run Cold Start Test
         if: ${{ inputs.run_cold_start == true }}
         run: |
-          cd bench
+          cd examples/vanilla
           echo "❄️ Running Cold Start Test"
           bun run bench:cold-start
 
       - name: Run Burst Traffic Test
         if: ${{ inputs.run_burst_traffic == true }}
         run: |
-          cd bench
+          cd examples/vanilla
           echo "🚀 Running Burst Traffic Test"
           bun run bench:burst
 
@@ -172,14 +172,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results-${{ github.run_id }}
-          path: bench/results/
+          path: examples/vanilla/results/
           retention-days: 30
           if-no-files-found: ignore
 
       - name: Generate Summary Report
         if: always()
         run: |
-          cd bench
+          cd examples/vanilla
           echo "📊 Generating comprehensive benchmark summary..."
           bun run bench:summary || echo "Summary generation failed, continuing..."
 

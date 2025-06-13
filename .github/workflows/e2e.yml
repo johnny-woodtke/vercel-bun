@@ -28,7 +28,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: cd example && bun install && cd ../bench && bun install
+        run: cd examples/next && bun install && cd ../vanilla && bun install
 
       - name: Run E2E tests
         run: bun run e2e
