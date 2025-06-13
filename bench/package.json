@@ -1,5 +1,5 @@
 {
-  "name": "bench",
+  "name": "vanilla-example",
   "type": "module",
   "private": true,
   "scripts": {
