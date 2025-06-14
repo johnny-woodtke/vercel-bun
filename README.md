@@ -104,6 +104,8 @@ See the [examples](./examples) directory for several examples:
 
 - **[Next.js + ElysiaJS](https://vercel-bun-nine.vercel.app)** - A full-stack Next.js application demonstrating high-performance serverless functions with Elysia REST API, Redis integration, Cloudflare R2 image uploads, and end-to-end type safety using Eden Treaty.
 
+- **[Next.js + Hono](./examples/hono)** - A lightweight and fast Next.js application showcasing serverless functions with the Hono web framework, featuring type-safe request validation with Zod and optimized performance for edge computing.
+
 - **[grammY](https://vercel-bun-grammy.vercel.app)** - A Telegram bot built with the grammY framework, showcasing how to deploy chatbots as serverless functions using the Bun runtime with webhook support and modular command structure.
 
 ## Next Steps
