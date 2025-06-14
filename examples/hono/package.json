@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.0",
+    "@types/bun": "^1.2.15",
     "hono": "^4.7.11",
     "next": "15.3.3",
     "react": "^19.0.0",
