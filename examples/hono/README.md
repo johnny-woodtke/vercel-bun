@@ -193,7 +193,7 @@ The `vercel.json` file configures the deployment:
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.3"
+      "runtime": "@godsreveal/vercel-bun@0.2.4"
     }
   },
   "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index.ts" }]
