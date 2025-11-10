@@ -1,6 +1,6 @@
 {
   "name": "@godsreveal/vercel-bun",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Bun runtime for Vercel serverless functions",
   "keywords": [
     "vercel",
@@ -38,7 +38,8 @@
   "scripts": {
     "build": "rm -rf dist && tsc && cp -r src/bootstrap src/runtime dist",
     "check-types": "tsc --noEmit",
-    "e2e": "bun test examples/next/e2e examples/vanilla/e2e"
+    "e2e": "bun test examples/next/e2e examples/vanilla/e2e",
+    "release": "bun run build && npm publish"
   },
   "dependencies": {
     "jszip": "^3.10.1"
