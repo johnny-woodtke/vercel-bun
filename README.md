@@ -5,6 +5,7 @@ Bun runtime for Vercel serverless functions
 ## Important
 
 **Bun is now an officially supported runtime on Vercel**, so I do NOT recommend using this custom Bun runtime unless:
+
 1. You have critical, unsolvable issues with the official runtime
 2. You want to run your serverless functions with a specific version of Bun
 
@@ -31,7 +32,7 @@ vercel-bun is a custom Vercel runtime that enables you to run serverless functio
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.6"
+      "runtime": "@godsreveal/vercel-bun@0.2.7"
     }
   },
   // Optional: use if you want all /api routes to be handled by /api/index.ts

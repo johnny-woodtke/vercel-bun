@@ -102,7 +102,7 @@ The example is configured to deploy to Vercel with both Bun and Node.js runtimes
 {
   "functions": {
     "api/bun.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.6"
+      "runtime": "@godsreveal/vercel-bun@0.2.7"
     },
     "api/node.ts": {
       "runtime": "@vercel/node@2.15.8"

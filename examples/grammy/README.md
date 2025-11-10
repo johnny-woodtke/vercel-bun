@@ -151,7 +151,7 @@ The project includes a `vercel.json` configuration file that uses the Bun runtim
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/bot.ts": {
-      "runtime": "@godsreveal/vercel-bun@0.2.6"
+      "runtime": "@godsreveal/vercel-bun@0.2.7"
     }
   }
 }
